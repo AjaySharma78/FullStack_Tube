@@ -24,6 +24,7 @@ const config = {
     githubCallbackUrl: String(process.env.GITHUB_CALLBACK_URL),
     emailID: String(process.env.EMAIL_ID),
     emailPassword: String(process.env.EMAIL_PASSWORD),
+    emailPort: String(process.env.EMAIL_PORT),
     port: String(process.env.PORT),
 };
 
