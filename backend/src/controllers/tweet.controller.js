@@ -105,58 +105,57 @@ const createTweet = asyncHandler(async (req, res, next) => {
 
   const createdTweet = await Tweet.aggregate([
     {
-      $match:{
-        _id: tweet._id
-      }
+      $match: {
+        _id: tweet._id,
+      },
     },
     {
-       $lookup:{
+      $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
-        as: "owner"
-       }
+        as: "owner",
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "tweet",
-        as: "likes"
-      }
+        as: "likes",
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "dislikes",
         localField: "_id",
         foreignField: "tweet",
-        as: "dislikes"
-      }
+        as: "dislikes",
+      },
     },
     {
-      $addFields:{
-        likesCount: {$size: "$likes"},
-        dislikesCount: {$size: "$dislikes"},
-        tweetOwner:{ $first: "$owner"}
-      }
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        dislikesCount: { $size: "$dislikes" },
+        tweetOwner: { $first: "$owner" },
+      },
     },
     {
-      $project:{
+      $project: {
         content: 1,
         images: 1,
         videos: 1,
         createdAt: 1,
         likesCount: 1,
         dislikesCount: 1,
-        tweetOwner:{
+        tweetOwner: {
           userName: 1,
           fullName: 1,
-          avatar: 1
-        }
-      }
-    }
-  ])
-
+          avatar: 1,
+        },
+      },
+    },
+  ]);
 
   return res
     .status(201)
@@ -168,60 +167,60 @@ const getUsertweets = asyncHandler(async (req, res) => {
 
   const tweets = await Tweet.aggregate([
     {
-      $match:{
-        owner: userId
-      }
+      $match: {
+        owner: userId,
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "users",
         localField: "owner",
         foreignField: "_id",
-        as: "owner"
-      }
+        as: "owner",
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "tweet",
-        as: "likes"
-      }
+        as: "likes",
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "dislikes",
         localField: "_id",
         foreignField: "tweet",
-        as: "dislikes"
-      }
+        as: "dislikes",
+      },
     },
     {
-      $addFields:{
-        likesCount: {$size: "$likes"},
-        dislikesCount: {$size: "$dislikes"},
-        tweetOwner:{ $first: "$owner"}
-      }
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        dislikesCount: { $size: "$dislikes" },
+        tweetOwner: { $first: "$owner" },
+      },
     },
     {
-      $sort:{createdAt: -1}
+      $sort: { createdAt: -1 },
     },
     {
-      $project:{
+      $project: {
         content: 1,
         images: 1,
         videos: 1,
         createdAt: 1,
         likesCount: 1,
         dislikesCount: 1,
-        tweetOwner:{
+        tweetOwner: {
           userName: 1,
           fullName: 1,
-          avatar: 1
-        }
-      }
-    }
-  ])
+          avatar: 1,
+        },
+      },
+    },
+  ]);
 
   if (!tweets || tweets.length === 0) {
     throw new ApiErrors(404, "No tweets found");
@@ -233,77 +232,78 @@ const getUsertweets = asyncHandler(async (req, res) => {
 });
 
 const getTweetById = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
 
-   const { tweetId } = req.params;
+  if (!tweetId) {
+    throw new ApiErrors(400, "tweetId is required");
+  }
 
-    if (!tweetId) {
-      throw new ApiErrors(400, "tweetId is required");
-    }
+  if (!mongoose.isValidObjectId(tweetId)) {
+    throw new ApiErrors(400, "Invalid tweetId");
+  }
 
-    if (!mongoose.isValidObjectId(tweetId)) {
-      throw new ApiErrors(400, "Invalid tweetId");
-    }
-
-    const tweet = await Tweet.aggregate([
-      {
-        $match:{
-          _id: new mongoose.Types.ObjectId(`${tweetId}`)
-        }
+  const tweet = await Tweet.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(`${tweetId}`),
       },
-      {
-         $lookup:{
-          from: "users",
-          localField: "owner",
-          foreignField: "_id",
-          as: "owner"
-         }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
       },
-      {
-        $lookup:{
-          from: "likes",
-          localField: "_id",
-          foreignField: "tweet",
-          as: "likes"
-        }
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes",
       },
-      {
-        $lookup:{
-          from: "dislikes",
-          localField: "_id",
-          foreignField: "tweet",
-          as: "dislikes"
-        }
+    },
+    {
+      $lookup: {
+        from: "dislikes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "dislikes",
       },
-      {
-        $addFields:{
-          likesCount: {$size: "$likes"},
-          dislikesCount: {$size: "$dislikes"},
-          tweetOwner:{ $first: "$owner"}
-        }
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        dislikesCount: { $size: "$dislikes" },
+        tweetOwner: { $first: "$owner" },
       },
-      {
-        $project:{
-          content: 1,
-          images: 1,
-          videos: 1,
-          createdAt: 1,
-          likesCount: 1,
-          dislikesCount: 1,
-          tweetOwner:{
-            userName: 1,
-            fullName: 1,
-            avatar: 1
-          }
-        }
-      }
-    ])
+    },
+    {
+      $project: {
+        content: 1,
+        images: 1,
+        videos: 1,
+        createdAt: 1,
+        likesCount: 1,
+        dislikesCount: 1,
+        tweetOwner: {
+          userName: 1,
+          fullName: 1,
+          avatar: 1,
+        },
+      },
+    },
+  ]);
 
-    if (!tweet ) {
-      throw new ApiErrors(404, "No tweet found");
-    }
+  if (!tweet) {
+    throw new ApiErrors(404, "No tweet found");
+  }
 
-    return res.status(200).json(new ApiResponse(200, tweet[0], "Tweet fetched successfully"));
-})
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tweet[0], "Tweet fetched successfully"));
+});
 
 const updateTweet = asyncHandler(async (req, res) => {
   const { text } = req.body;

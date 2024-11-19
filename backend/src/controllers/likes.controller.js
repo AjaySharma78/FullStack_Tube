@@ -185,8 +185,20 @@ const getLikedVideos = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, likedVideos, likedVideos.length===0? "No liked videos found" : "Liked videos retrieved successfully")
+      new ApiResponse(
+        200,
+        likedVideos,
+        likedVideos.length === 0
+          ? "No liked videos found"
+          : "Liked videos retrieved successfully"
+      )
     );
 });
 
-export { toggleVideoLike, getLikedVideos, toggleVideoCommentLike , toggleTweetLike, toggleTweetCommentLike};
+export {
+  toggleVideoLike,
+  getLikedVideos,
+  toggleVideoCommentLike,
+  toggleTweetLike,
+  toggleTweetCommentLike,
+};

@@ -34,7 +34,7 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      required: function() {
+      required: function () {
         return !this.googleId && !this.githubId;
       },
     },
@@ -51,7 +51,7 @@ const userSchema = new Schema(
     },
     verifyTokenExpires: {
       type: Date,
-      default: null
+      default: null,
     },
     forgotPasswordToken: {
       type: String,
@@ -59,7 +59,7 @@ const userSchema = new Schema(
     },
     forgotPasswordTokenExpires: {
       type: Date,
-      default: null
+      default: null,
     },
     lastUsernameChange: {
       type: Date,
@@ -73,54 +73,64 @@ const userSchema = new Schema(
       type: String,
       default: null,
     },
-    watchHistory:[
-       { 
-        type:Schema.Types.ObjectId,
-        ref:'Video'
-       
-      }
-    ]
+    watchHistory: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Video",
+      },
+    ],
   },
   { timestamps: true }
 );
 
 userSchema.pre("save", async function (next) {
   // if password is not modified, skip this middleware
-  if(!this.isModified("password")) return next();
+  if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
-})
+});
 
-userSchema.methods.isPasswordCorrect = async function (password){
+userSchema.methods.isPasswordCorrect = async function (password) {
   // this.password is the hashed password from the database and password is the password from the user
-  const correctPassword= await bcrypt.compare(password, this.password);
-  if(!correctPassword) return false;
+  const correctPassword = await bcrypt.compare(password, this.password);
+  if (!correctPassword) return false;
   return correctPassword;
-}
+};
 
-userSchema.methods.generateAccessToken = function (){
+userSchema.methods.generateAccessToken = function () {
   // id is payload name and this._id is the value from the database
-  return jwt.sign({
-    _id:this._id,
-    userName:this.userName,
-    email:this.email,
-    fullName:this.fullName,
-  },config.accessTokenSecret, {expiresIn:config.accessTokenExpiresIn});
-}
+  return jwt.sign(
+    {
+      _id: this._id,
+      userName: this.userName,
+      email: this.email,
+      fullName: this.fullName,
+    },
+    config.accessTokenSecret,
+    { expiresIn: config.accessTokenExpiresIn }
+  );
+};
 
-userSchema.methods.generateRefreshToken = function (){
+userSchema.methods.generateRefreshToken = function () {
   // id is payload name and this._id is the value from the database
-  return jwt.sign({
-    _id:this._id,
-    userName:this.userName, 
-  }, config.refreshTokenSecret, {expiresIn:config.refreshTokenExpiresIn});
-}
+  return jwt.sign(
+    {
+      _id: this._id,
+      userName: this.userName,
+    },
+    config.refreshTokenSecret,
+    { expiresIn: config.refreshTokenExpiresIn }
+  );
+};
 
-userSchema.methods.generateEmailToken = function (){
-  return jwt.sign({
-    _id:this.id,
-    email:this.email,
-  },config.emailTokenSecret);
-}
+userSchema.methods.generateEmailToken = function () {
+  return jwt.sign(
+    {
+      _id: this.id,
+      email: this.email,
+    },
+    config.emailTokenSecret
+  );
+};
 
 export const User = mongoose.model("User", userSchema);

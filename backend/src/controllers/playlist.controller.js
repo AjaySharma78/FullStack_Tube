@@ -133,12 +133,15 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     if (!playlist) {
       throw new ApiErrors(404, "Playlist not found");
     }
-     
-    const userId = req.user?._id
-    
-  if (userId.toString() !== playlist.owner.toString()) {
-    throw new ApiErrors(403, "You are not authorized to add video in playlist");
-  }
+
+    const userId = req.user?._id;
+
+    if (userId.toString() !== playlist.owner.toString()) {
+      throw new ApiErrors(
+        403,
+        "You are not authorized to add video in playlist"
+      );
+    }
     const video = await Video.findById(videoId);
 
     if (!video) {
@@ -235,11 +238,10 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     throw new ApiErrors(400, "PlaylistId and videoId is required");
   }
 
-
   const isplaylist = await Playlist.findById(playlistId);
 
-  const userId = req.user?._id
-    
+  const userId = req.user?._id;
+
   if (userId.toString() !== isplaylist.owner.toString()) {
     throw new ApiErrors(403, "You are not authorized to add video in playlist");
   }
@@ -249,16 +251,20 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   }
 
   if (!isplaylist.video.includes(videoId)) {
-    return res.status(400).json(new ApiResponse(400, null, "Video not found in the playlist"));
+    return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Video not found in the playlist"));
   }
- 
-  const playlist = await Playlist.findByIdAndUpdate(playlistId, {
-    $pull: { video: videoId },
-  },
-  {
-    new: true,
-  }
-);
+
+  const playlist = await Playlist.findByIdAndUpdate(
+    playlistId,
+    {
+      $pull: { video: videoId },
+    },
+    {
+      new: true,
+    }
+  );
 
   if (!playlist) {
     throw new ApiErrors(404, "Playlist not found cannot remove video");
@@ -267,11 +273,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(
-        200,
-        playlist,
-        "Video removed from playlist successfully"
-      )
+      new ApiResponse(200, playlist, "Video removed from playlist successfully")
     );
 });
 
@@ -283,8 +285,8 @@ const removeAllVideoFromPlaylist = asyncHandler(async (req, res) => {
   }
   const isplaylist = await Playlist.findById(playlistId);
 
-  const userId = req.user?._id
-  
+  const userId = req.user?._id;
+
   if (userId.toString() !== isplaylist.owner.toString()) {
     throw new ApiErrors(403, "You are not authorized to add video in playlist");
   }
@@ -433,7 +435,6 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, playlist, "Playlist fetched successfully"));
 });
-
 
 export {
   createPlaylist,

@@ -224,9 +224,7 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
     throw new ApiErrors(400, "Please provide username or email or fullName");
   }
 
-  const user = await User.findById(userId).select(
-    "-password -refreshToken"
-  );
+  const user = await User.findById(userId).select("-password -refreshToken");
 
   if (!user) {
     throw new ApiErrors(404, "User not found");
@@ -353,16 +351,13 @@ const generateToken = async (userId) => {
 };
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-
   const userId = req.user?._id;
 
   if (!userId) {
     throw new ApiErrors(400, "Invalid user id");
   }
 
-  const user = await User.findById(userId).select(
-    "-password -refreshToken"
-  );
+  const user = await User.findById(userId).select("-password -refreshToken");
   const avatarPath = req.file?.path;
 
   if (!user) {
@@ -377,8 +372,11 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   if (userId.toString() !== user._id.toString()) {
     unlinkPath(avatarPath, null);
-    throw new ApiErrors(403, "You are not authorized to update this user avatar"); 
-  } 
+    throw new ApiErrors(
+      403,
+      "You are not authorized to update this user avatar"
+    );
+  }
 
   const avatar = await uploadTOCloudinary(avatarPath, "user");
 
@@ -414,9 +412,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     throw new ApiErrors(400, "Invalid user id");
   }
 
-  const user = await User.findById(userId).select(
-    "-password -refreshToken"
-  );
+  const user = await User.findById(userId).select("-password -refreshToken");
 
   if (!user) {
     unlinkPath(null, coverImagePath);
@@ -430,7 +426,10 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   if (userId.toString() !== user._id.toString()) {
     unlinkPath(null, coverImagePath);
-    throw new ApiErrors(403, "You are not authorized to update this user cover image");
+    throw new ApiErrors(
+      403,
+      "You are not authorized to update this user cover image"
+    );
   }
 
   const coverImage = await uploadTOCloudinary(coverImagePath, "user");
@@ -630,7 +629,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 const googleOAuthCallback = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken, options } = req.authInfo;
   const user = req.user;
-  
+
   res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
@@ -698,8 +697,8 @@ const getloginUserChannelProfile = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $match: {
-              isPublished: true
-            }
+              isPublished: true,
+            },
           },
           {
             $project: {
@@ -710,9 +709,9 @@ const getloginUserChannelProfile = asyncHandler(async (req, res) => {
               videoFile: 1,
               thumbnail: 1,
               createdAt: 1,
-            }
-          }
-        ]
+            },
+          },
+        ],
       },
     },
     {
@@ -724,9 +723,9 @@ const getloginUserChannelProfile = asyncHandler(async (req, res) => {
           $cond: {
             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
-            else: false
-          }
-        }
+            else: false,
+          },
+        },
       },
     },
     {
@@ -758,7 +757,7 @@ const getloginUserChannelProfile = asyncHandler(async (req, res) => {
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { userName } = req.params;
- 
+
   if (!userName.trim()) {
     throw new ApiErrors(400, "Invalid username");
   }
@@ -766,8 +765,8 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const user = await User.aggregate([
     {
       $match: {
-        userName: { $regex: new RegExp(userName, 'i') } 
-    },
+        userName: { $regex: new RegExp(userName, "i") },
+      },
     },
     {
       $lookup: {
@@ -794,8 +793,8 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         pipeline: [
           {
             $match: {
-              isPublished: true
-            }
+              isPublished: true,
+            },
           },
           {
             $project: {
@@ -806,9 +805,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
               videoFile: 1,
               thumbnail: 1,
               createdAt: 1,
-            }
-          }
-        ]
+            },
+          },
+        ],
       },
     },
     {
@@ -820,9 +819,9 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
           $cond: {
             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
-            else: false
-          }
-        }
+            else: false,
+          },
+        },
       },
     },
     {
@@ -848,7 +847,13 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, user[0], user.length===0? "User not found" :"User channel profile fetched successfully")
+      new ApiResponse(
+        200,
+        user[0],
+        user.length === 0
+          ? "User not found"
+          : "User channel profile fetched successfully"
+      )
     );
 });
 
@@ -866,14 +871,15 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     throw new ApiErrors(404, "User not found");
   }
 
-
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        user.watchHistory, user.watchHistory.length === 0 ? "User watch history is empty" :
-        "User watch history fetched successfully"
+        user.watchHistory,
+        user.watchHistory.length === 0
+          ? "User watch history is empty"
+          : "User watch history fetched successfully"
       )
     );
 });

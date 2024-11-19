@@ -62,12 +62,12 @@ const createVideo = asyncHandler(async (req, res) => {
 
   const createdVideo = await Video.aggregate([
     {
-      $match:{
-        _id: new mongoose.Types.ObjectId(`${newVideo._id}`)
-      }
+      $match: {
+        _id: new mongoose.Types.ObjectId(`${newVideo._id}`),
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "users",
         localField: "videoOwner",
         foreignField: "_id",
@@ -94,45 +94,44 @@ const createVideo = asyncHandler(async (req, res) => {
             },
           },
         ],
-
-      }
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "likes",
         localField: "_id",
         foreignField: "tweet",
-        as: "likes"
-      }
+        as: "likes",
+      },
     },
     {
-      $lookup:{
+      $lookup: {
         from: "dislikes",
         localField: "_id",
         foreignField: "tweet",
-        as: "dislikes"
-      }
+        as: "dislikes",
+      },
     },
     {
-      $addFields:{
+      $addFields: {
         numberoflikes: { $size: "$likes" },
         numberofdislikes: { $size: "$dislikes" },
         videoOwner: { $first: "$ownerInfo" },
-        isLiked:{
-          $cond:{
+        isLiked: {
+          $cond: {
             if: { $in: [req.user?._id, "$likes.likedBy"] },
             then: true,
-            else: false
-          }
+            else: false,
+          },
         },
-        isDisliked:{
-          $cond:{
+        isDisliked: {
+          $cond: {
             if: { $in: [req.user?._id, "$dislikes.dislikedBy"] },
             then: true,
-            else: false
-          }
-        }
-      }
+            else: false,
+          },
+        },
+      },
     },
     {
       $project: {
@@ -155,8 +154,8 @@ const createVideo = asyncHandler(async (req, res) => {
           isSubscribed: 1,
         },
       },
-    }
-  ])
+    },
+  ]);
 
   if (!createdVideo) {
     throw new ApiErrors(500, "Something went wrong while creating video");
@@ -443,7 +442,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
 });
 
 const getVideo = asyncHandler(async (req, res) => {
-  const { videoId,userId } = req.params;
+  const { videoId, userId } = req.params;
 
   if (!isValidObjectId(videoId)) {
     throw new ApiErrors(400, "Invalid videoId");
@@ -551,10 +550,10 @@ const getVideo = asyncHandler(async (req, res) => {
   }
 
   // Add video to watch history of user if user is logged in
-  if(userId && isValidObjectId(userId)){
-  await User.findByIdAndUpdate(userId, {
-    $push: { watchHistory: videoId, $position: 0 },
-  });
+  if (userId && isValidObjectId(userId)) {
+    await User.findByIdAndUpdate(userId, {
+      $push: { watchHistory: videoId, $position: 0 },
+    });
   }
 
   return res
@@ -609,10 +608,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   const videoinfo = await Video.findById(videoId);
   if (videoinfo.videoOwner.toString() !== userId.toString()) {
-    throw new ApiErrors(
-      403,
-      "You are not owner of this video to delete"
-    );
+    throw new ApiErrors(403, "You are not owner of this video to delete");
   }
   const video = await Video.findByIdAndDelete(videoId);
   if (!video) {

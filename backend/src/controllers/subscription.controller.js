@@ -116,7 +116,15 @@ const subscription = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, subscriptions, subscriptions.length === 0 ? "No Subscriptions found":"Subscriptions found"));
+    .json(
+      new ApiResponse(
+        200,
+        subscriptions,
+        subscriptions.length === 0
+          ? "No Subscriptions found"
+          : "Subscriptions found"
+      )
+    );
 });
 
 const getSubscribers = asyncHandler(async (req, res) => {
@@ -172,7 +180,13 @@ const getSubscribers = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, subscribers, subscribers.length===0?"No Subscribers found":"Subscribers found"));
+    .json(
+      new ApiResponse(
+        200,
+        subscribers,
+        subscribers.length === 0 ? "No Subscribers found" : "Subscribers found"
+      )
+    );
 });
 
 const subscribedChannel = asyncHandler(async (req, res) => {
@@ -209,24 +223,23 @@ const subscribedChannel = asyncHandler(async (req, res) => {
               isSubscribed: true,
             },
           },
-        
         ],
       },
     },
     {
       $unwind: "$subscribedChannelInfo",
-    }, 
+    },
     {
       $project: {
-         subscribedChannelInfo:{
-        userName: 1,
-        fullName: 1,
-        avatar: 1,
-        subscribersCount: 1,
-        isSubscribed:1
-         }
+        subscribedChannelInfo: {
+          userName: 1,
+          fullName: 1,
+          avatar: 1,
+          subscribersCount: 1,
+          isSubscribed: 1,
+        },
       },
-    }
+    },
   ]);
 
   if (!subscriptions) {
@@ -235,7 +248,15 @@ const subscribedChannel = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, subscriptions, subscriptions.length==0?"No Subscribed Channel found":"Subscribed Channel found"));
+    .json(
+      new ApiResponse(
+        200,
+        subscriptions,
+        subscriptions.length == 0
+          ? "No Subscribed Channel found"
+          : "Subscribed Channel found"
+      )
+    );
 });
 
-export { toggleSubscribe, subscription, getSubscribers , subscribedChannel };
+export { toggleSubscribe, subscription, getSubscribers, subscribedChannel };
