@@ -174,7 +174,7 @@ const loginUsers = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -368,6 +368,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "Lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -712,7 +713,7 @@ const googleOAuthCallback = asyncHandler(async (req, res) => {
 
     return res
      .status(200)
-     .redirect(`https://full-stack-tube.vercel.app/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+     .redirect(`https://full-stack-tube.vercel.app/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
  }
 
  return res
@@ -735,7 +736,7 @@ const githubOAuthCallback = asyncHandler(async (req, res) => {
 
      return res
       .status(200)
-      .redirect(`https://full-stack-tube.vercel.app/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+      .redirect(`https://full-stack-tube.vercel.app/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
   }
 
  return res
@@ -1114,6 +1115,7 @@ const verify2FAToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "none",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
