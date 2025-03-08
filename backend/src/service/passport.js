@@ -64,12 +64,12 @@ passport.use(
           return done(new ApiErrors(404, "User not found"), false);
         }
 
-
         const options = {
-          httpOnly: true,
-          secure: true,
-          sameSite: "strict",
-          maxAge: 7 * 24 * 60 * 60 * 1000,  
+          httpOnly: true, 
+          secure: true, 
+          sameSite: "None",
+          domain: ".fullstack-tube.onrender.com",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
         };
         return done(null,user, { accessToken, refreshToken, options });
       } catch (error) {
@@ -143,10 +143,11 @@ passport.use(
 
 
         const options = {
-          httpOnly: true,
-          secure: true,
-          sameSite: "strict",
-          maxAge: 7 * 24 * 60 * 60 * 1000,  
+          httpOnly: true, 
+          secure: true, 
+          sameSite: "None",
+          domain: ".fullstack-tube.onrender.com",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
         };
 
         return done(null,user,{accessToken, refreshToken, options });

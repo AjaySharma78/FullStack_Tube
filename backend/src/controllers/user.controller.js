@@ -1,4 +1,7 @@
-import { uploadTOCloudinary, deleteFromCloudinary } from "../service/cloudinaryService.js";
+import {
+  uploadTOCloudinary,
+  deleteFromCloudinary,
+} from "../service/cloudinaryService.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { sendMail } from "../service/sendMail.js";
@@ -18,12 +21,15 @@ function unlinkPath(avatarLocalPath, coverImageLocalPath) {
 }
 
 const generateBackupCode = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    let backupCode = '';
-    for (let i = 0; i < 10; i++) {
-      backupCode += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return backupCode;
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()";
+  let backupCode = "";
+  for (let i = 0; i < 10; i++) {
+    backupCode += characters.charAt(
+      Math.floor(Math.random() * characters.length)
+    );
+  }
+  return backupCode;
 };
 
 const registerUsers = asyncHandler(async (req, res) => {
@@ -104,17 +110,20 @@ const registerUsers = asyncHandler(async (req, res) => {
     text: `${config.clientUrl}/verify-email?token=${emailToken}`,
   });
 
-  setTimeout(async () => {
-    const updatedUser = await User.findById(user._id);
-    if (updatedUser && !updatedUser.isEmailVerified) {
-      await User.findByIdAndDelete(user._id);
-      sendMail({
-        email: user.email,
-        subject: "Account Deletion",
-        text: "Your account has been deleted as the email was not verified within 15 minutes.",
-      });
-    }
-  }, 15 * 60 * 1000);
+  setTimeout(
+    async () => {
+      const updatedUser = await User.findById(user._id);
+      if (updatedUser && !updatedUser.isEmailVerified) {
+        await User.findByIdAndDelete(user._id);
+        sendMail({
+          email: user.email,
+          subject: "Account Deletion",
+          text: "Your account has been deleted as the email was not verified within 15 minutes.",
+        });
+      }
+    },
+    15 * 60 * 1000
+  );
 
   return res
     .status(201)
@@ -174,7 +183,8 @@ const loginUsers = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
+    sameSite: "None",
+    domain: ".fullstack-tube.onrender.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -207,7 +217,6 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
   };
   return res
     .status(200)
@@ -246,7 +255,7 @@ const changePassword = asyncHandler(async (req, res) => {
 
   user.password = newPassword;
   await user.save({ validateBeforeSave: false });
-  
+
   sendMail({
     email: user.email,
     subject: "Password Changed",
@@ -296,7 +305,7 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
   if (fullName) {
     user.fullName = fullName;
   }
-  
+
   let previousEmail;
   if (email) {
     previousEmail = user.email;
@@ -311,21 +320,24 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
       text: `${config.clientUrl}/verify-email?token=${emailToken}`,
     });
 
-    setTimeout(async () => {
-      const updatedUser = await User.findById(userId);
-      if (updatedUser && !updatedUser.isEmailVerified) {
-        updatedUser.email = previousEmail;
-        updatedUser.isEmailVerified = true;
-        updatedUser.verifyToken = null;
-        updatedUser.verifyTokenExpires = null;
-        await updatedUser.save({ validateBeforeSave: false });
-        sendMail({
-          email: previousEmail,
-          subject: "Email Reverted",
-          text: "Your email has been reverted to the previous email as the new email was not verified within  minutes.",
-        });
-      }
-    }, 5 * 60 * 1000); 
+    setTimeout(
+      async () => {
+        const updatedUser = await User.findById(userId);
+        if (updatedUser && !updatedUser.isEmailVerified) {
+          updatedUser.email = previousEmail;
+          updatedUser.isEmailVerified = true;
+          updatedUser.verifyToken = null;
+          updatedUser.verifyTokenExpires = null;
+          await updatedUser.save({ validateBeforeSave: false });
+          sendMail({
+            email: previousEmail,
+            subject: "Email Reverted",
+            text: "Your email has been reverted to the previous email as the new email was not verified within  minutes.",
+          });
+        }
+      },
+      5 * 60 * 1000
+    );
   }
 
   await user.save({ validateBeforeSave: false });
@@ -369,7 +381,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
+    sameSite: "None",
+    domain: ".fullstack-tube.onrender.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -618,13 +631,9 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     text: `${config.clientUrl}/verify-email?token=${emailToken}`,
   });
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {},
-      "Email verification sent successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Email verification sent successfully"));
 });
 
 const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
@@ -661,13 +670,9 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
     text: `${config.clientUrl}/reset-password?token=${forgotPasswordEmailToken}`,
   });
 
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {},
-      "Reset password email sent successfully"
-    )
-  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Reset password email sent successfully"));
 });
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -702,21 +707,26 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 const googleOAuthCallback = asyncHandler(async (req, res) => {
-  const {accessToken, refreshToken, options } = req.authInfo;
+  const { accessToken, refreshToken, options } = req.authInfo;
   const user = req.user;
 
   if (user.isTwoFactorEnabled) {
     const userInfo = await User.findById(user._id).select(
       "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
     );
-    const encryptedUserId = CryptoJS.AES.encrypt(JSON.stringify(userInfo._id), config.cryptoSecret ).toString();
+    const encryptedUserId = CryptoJS.AES.encrypt(
+      JSON.stringify(userInfo._id),
+      config.cryptoSecret
+    ).toString();
 
     return res
-     .status(200)
-     .redirect(`${config.clientUrl}/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
- }
+      .status(200)
+      .redirect(
+        `${config.clientUrl}/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`
+      );
+  }
 
- return res
+  return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
@@ -732,14 +742,19 @@ const githubOAuthCallback = asyncHandler(async (req, res) => {
       "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
     );
 
-    const encryptedUserId = CryptoJS.AES.encrypt(JSON.stringify(userInfo._id), config.cryptoSecret ).toString();
+    const encryptedUserId = CryptoJS.AES.encrypt(
+      JSON.stringify(userInfo._id),
+      config.cryptoSecret
+    ).toString();
 
-     return res
+    return res
       .status(200)
-      .redirect(`${config.clientUrl}/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+      .redirect(
+        `${config.clientUrl}/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`
+      );
   }
 
- return res
+  return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
@@ -1014,7 +1029,7 @@ const generate2FASecret = asyncHandler(async (req, res) => {
   while (backupCodes.size < 10) {
     backupCodes.add(generateBackupCode());
   }
-  
+
   user.twoFactorSecret = secret.base32;
   user.twoFactorBackupCodes = Array.from(backupCodes);
   await user.save({ validateBeforeSave: false });
@@ -1031,7 +1046,6 @@ const generate2FASecret = asyncHandler(async (req, res) => {
   if (!data_url) {
     throw ApiErrors.internal("Something went wrong while generating QR code");
   }
-
 
   sendMail({
     email: user.email,
@@ -1052,7 +1066,7 @@ const generate2FASecret = asyncHandler(async (req, res) => {
 
 const verify2FAToken = asyncHandler(async (req, res) => {
   const { token, userId, backupCode } = req.body;
-  
+
   if (!userId) {
     throw ApiErrors.badRequest("Invalid user id");
   }
@@ -1065,7 +1079,7 @@ const verify2FAToken = asyncHandler(async (req, res) => {
     throw ApiErrors.notFound("User not found");
   }
 
-  if (backupCode ) {
+  if (backupCode) {
     if (!user.twoFactorBackupCodes.includes(backupCode)) {
       throw ApiErrors.unauthorized("Invalid backup code");
     }
@@ -1080,10 +1094,10 @@ const verify2FAToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "None",
+      domain: ".fullstack-tube.onrender.com",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
-
     return res
       .status(200)
       .cookie("refreshToken", refreshToken, options)
@@ -1116,7 +1130,8 @@ const verify2FAToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
+    sameSite: "None",
+    domain: ".fullstack-tube.onrender.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
