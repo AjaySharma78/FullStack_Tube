@@ -70,7 +70,7 @@ router.get(
 );
 router.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "http://localhost:5173/signup" }),
+  passport.authenticate("google", { failureRedirect: "https://full-stack-tube.vercel.app/signup" }),
   googleOAuthCallback
 );
 
@@ -80,7 +80,7 @@ router.get(
 );
 router.get(
   "/auth/github/callback",
-  passport.authenticate("github", { failureRedirect: "http://localhost:5173/signup" }),
+  passport.authenticate("github", { failureRedirect: "https://full-stack-tube.vercel.app/signup" }),
   githubOAuthCallback
 );
 

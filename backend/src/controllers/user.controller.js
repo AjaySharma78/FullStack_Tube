@@ -714,14 +714,14 @@ const googleOAuthCallback = asyncHandler(async (req, res) => {
 
     return res
      .status(200)
-     .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+     .redirect(`https://full-stack-tube.vercel.app/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
  }
 
  return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
-    .redirect(`${config.clientUrl}`);
+    .redirect(`https://full-stack-tube.vercel.app/`);
 });
 
 const githubOAuthCallback = asyncHandler(async (req, res) => {
@@ -737,14 +737,14 @@ const githubOAuthCallback = asyncHandler(async (req, res) => {
 
      return res
       .status(200)
-      .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+      .redirect(`https://full-stack-tube.vercel.app/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
   }
 
  return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
-    .redirect(`${config.clientUrl}`);
+    .redirect(`https://full-stack-tube.vercel.app/`);
 });
 
 const getloginUserChannelProfile = asyncHandler(async (req, res) => {
