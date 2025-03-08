@@ -2,9 +2,10 @@ import axios from 'axios';
 import { setCredentials, logOut } from './authSlice.ts';
 import store from '../../store/store.ts';
 import {setupCache} from 'axios-cache-interceptor'
+import config from '../../../env/config.ts';
 
 const instance = axios.create({
-    baseURL: 'http://localhost:8000/api/v1',
+    baseURL: config.backendEndpoint,
     withCredentials: true,
 });
 const api = setupCache(instance);
