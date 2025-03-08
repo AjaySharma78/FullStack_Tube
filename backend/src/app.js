@@ -13,7 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: config.clientUrl,
+    origin: 'https://full-stack-tube.vercel.app/',
     credentials: true,
   },
 });
@@ -21,7 +21,7 @@ const io = new Server(server, {
 app.use(helmate());
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: 'https://full-stack-tube.vercel.app/',
     credentials: true,
   })
 );
