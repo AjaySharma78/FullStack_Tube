@@ -713,7 +713,7 @@ const googleOAuthCallback = asyncHandler(async (req, res) => {
 
     return res
      .status(200)
-     .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+     .redirect(`${config.clientUrl}/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
  }
 
  return res
@@ -736,7 +736,7 @@ const githubOAuthCallback = asyncHandler(async (req, res) => {
 
      return res
       .status(200)
-      .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+      .redirect(`${config.clientUrl}/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
   }
 
  return res
