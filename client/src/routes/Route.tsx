@@ -33,6 +33,10 @@ const router = createBrowserRouter([
         path: "/",
         element: <Home />,
       },
+       {
+        path: "/verify-two-factor-auth",
+        element: <TwoFactorAuth />,
+      },
       {
         path: "/login",
         element: <Login />,
@@ -161,10 +165,7 @@ const router = createBrowserRouter([
         path: "/search",
         element: <SearchVideos />,
       },
-      {
-        path: "/2fa",
-        element: <TwoFactorAuth />,
-      },
+     
       {
         path: "/settings",
         element: <Setting />,

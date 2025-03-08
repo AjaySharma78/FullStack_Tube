@@ -48,12 +48,12 @@ const Security = () => {
         }
       );
     } else {
-      navigate("/2fa", { state: { disable2FA: true } });
+      navigate("/verify-two-factor-auth", { state: { disable2FA: true } });
     }
   };
 
   const handleNext = () => {
-    navigate("/2fa");
+    navigate("/verify-two-factor-auth");
     setQrCode("");
   };
 

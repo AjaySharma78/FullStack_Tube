@@ -32,7 +32,7 @@ function Login() {
               if (userData.success) {
               if (userData.data.twoFactorEnabled) {
                 dispatch(setUser(userData.data));
-                navigate("/2fa");
+                navigate("/verify-two-factor-auth");
                 resolve("2FA required");
               } else if (userData.data.user.isEmailVerified) {
                 dispatch(
