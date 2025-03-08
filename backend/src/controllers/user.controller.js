@@ -174,7 +174,6 @@ const loginUsers = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -207,7 +206,6 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
   };
   return res
     .status(200)
@@ -369,7 +367,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -1081,7 +1078,6 @@ const verify2FAToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
@@ -1117,7 +1113,6 @@ const verify2FAToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
