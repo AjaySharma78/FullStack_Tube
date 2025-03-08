@@ -7,5 +7,5 @@ export const initSocket = async () => {
         timeout: 10000,
         transports: ['websocket'],
     };
-    return io('http://localhost:8001', options);
+    return io('https://fullstack-tube.onrender.com', options);
 };

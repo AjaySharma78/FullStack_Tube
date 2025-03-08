@@ -7,6 +7,9 @@ import config from '../../../env/config.ts';
 const instance = axios.create({
     baseURL: config.backendEndpoint,
     withCredentials: true,
+    headers: {
+        "Content-Type": "application/json"
+      }
 });
 const api = setupCache(instance);
 
