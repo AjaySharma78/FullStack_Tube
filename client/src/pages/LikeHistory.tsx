@@ -1,4 +1,4 @@
-import Skeleton from "../components/Skeleton/Skeleton";
+
 import Carousel from "../components/Carousel";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
