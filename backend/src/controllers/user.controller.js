@@ -101,7 +101,7 @@ const registerUsers = asyncHandler(async (req, res) => {
   sendMail({
     email: user.email,
     subject: "Email Verification",
-    text: `http://localhost:5173/verify-email?token=${emailToken}`,
+    text: `${config.clientUrl}/verify-email?token=${emailToken}`,
   });
 
   setTimeout(async () => {
@@ -174,7 +174,7 @@ const loginUsers = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "Lax",
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -207,6 +207,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "strict",
   };
   return res
     .status(200)
@@ -307,7 +308,7 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
     sendMail({
       email: user.email,
       subject: "Email Verification",
-      text: `http://localhost:5173/verify-email?token=${emailToken}`,
+      text: `${config.clientUrl}/verify-email?token=${emailToken}`,
     });
 
     setTimeout(async () => {
@@ -368,7 +369,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "Lax",
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -614,7 +615,7 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
   sendMail({
     email: user.email,
     subject: "Email Verification",
-    text: `http://localhost:5173/verify-email?token=${emailToken}`,
+    text: `${config.clientUrl}/verify-email?token=${emailToken}`,
   });
 
   return res.status(200).json(
@@ -708,19 +709,18 @@ const googleOAuthCallback = asyncHandler(async (req, res) => {
     const userInfo = await User.findById(user._id).select(
       "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
     );
-    
     const encryptedUserId = CryptoJS.AES.encrypt(JSON.stringify(userInfo._id), config.cryptoSecret ).toString();
 
     return res
      .status(200)
-     .redirect(`https://full-stack-tube.vercel.app/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+     .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
  }
 
  return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
-    .redirect(`https://full-stack-tube.vercel.app/`);
+    .redirect(`${config.clientUrl}`);
 });
 
 const githubOAuthCallback = asyncHandler(async (req, res) => {
@@ -736,14 +736,14 @@ const githubOAuthCallback = asyncHandler(async (req, res) => {
 
      return res
       .status(200)
-      .redirect(`https://full-stack-tube.vercel.app/verify-two-factor-auth?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+      .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
   }
 
  return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
-    .redirect(`https://full-stack-tube.vercel.app/`);
+    .redirect(`${config.clientUrl}`);
 });
 
 const getloginUserChannelProfile = asyncHandler(async (req, res) => {
@@ -1080,6 +1080,7 @@ const verify2FAToken = asyncHandler(async (req, res) => {
     const options = {
       httpOnly: true,
       secure: true,
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
@@ -1115,7 +1116,7 @@ const verify2FAToken = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
-    sameSite: "none",
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
