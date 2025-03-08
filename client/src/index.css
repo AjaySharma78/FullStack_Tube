@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+::-webkit-scrollbar {
+  display: none;
+  -ms-overflow-style: none;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.vjs-control-bar{
+  border-radius: 0px 0px 10px 10px !important;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+.tox-statusbar,.tox-edit-area,.tox:not(.tox-tinymce-inline) .tox-editor-header,.tox-menubar,.tox-mbtn,.tox-toolbar-overlord,.tox-toolbar__primary,.tox-toolbar__secondary,.tox-toolbar__overflow,.tox-toolbar__group-label,.tox-menu,.tox-silver-sink  {
+  background-color: rgb(24 24 27 / 1)!important;
+  color: rgb(184, 184, 184)!important;
+}
+
+.tox-tinymce{
+border: gray 1px solid!important;
+}
+.tox-statusbar__path-item,.tox-statusbar__wordcount{
+  color: rgb(184, 184, 184)!important;
+}
+
+.tox .tox-statusbar__resize-handle svg{
+  fill: whitesmoke!important;
+}

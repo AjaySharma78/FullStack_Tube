@@ -36,30 +36,53 @@ const createVideoComment = asyncHandler(async (req, res) => {
         localField: "commentOwner",
         foreignField: "_id",
         as: "commentOwner",
-        pipeline: [
-          {
-            $lookup: {
-              from: "likes",
-              localField: "_id",
-              foreignField: "comment",
-              as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "dislikes",
+        localField: "_id",
+        foreignField: "comment",
+        as: "dislikes",
+      },
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        dislikesCount: { $size: "$dislikes" },
+        isLiked: {
+          $cond: {
+            if: {
+              $in: [
+                req.user?._id,
+                "$likes.likedBy",
+              ],
             },
+            then: true,
+            else: false,
           },
-          {
-            $lookup: {
-              from: "dislikes",
-              localField: "_id",
-              foreignField: "comment",
-              as: "dislikes",
+        },
+
+        isDisliked: {
+          $cond: {
+            if: {
+              $in: [
+                req.user?._id,
+                "$dislikes.dislikedBy",
+              ],
             },
+            then: true,
+            else: false,
           },
-          {
-            $addFields: {
-              likesCount: { $size: "$likes" },
-              dislikesCount: { $size: "$dislikes" },
-            },
-          },
-        ],
+        },
       },
     },
     {
@@ -73,10 +96,12 @@ const createVideoComment = asyncHandler(async (req, res) => {
           fullName: 1,
           userName: 1,
           avatar: 1,
-          likesCount: 1,
-          dislikesCount: 1,
+          _id:1,
         },
-        createdAt: 1,
+        likesCount: 1,
+        dislikesCount: 1,
+        isLiked:1,
+        isDisliked:1
       },
     },
   ]);
@@ -91,8 +116,8 @@ const createVideoComment = asyncHandler(async (req, res) => {
 });
 
 const getVideoComments = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
-
+  const { videoId, userId } = req.params;
+ 
   if (!isValidObjectId(videoId)) {
     throw new ApiErrors(
       400,
@@ -132,6 +157,35 @@ const getVideoComments = asyncHandler(async (req, res) => {
       $addFields: {
         likesCount: { $size: "$likes" },
         dislikesCount: { $size: "$dislikes" },
+        isLiked: {
+          $cond: {
+            if: {
+              $in: [
+                (userId == "null" || userId == ":userId")
+                  ? userId
+                  : new mongoose.Types.ObjectId(`${userId}`),
+                "$likes.likedBy",
+              ],
+            },
+            then: true,
+            else: false,
+          },
+        },
+
+        isDisliked: {
+          $cond: {
+            if: {
+              $in: [
+                userId == "null" || userId == ":userId"
+                  ? userId
+                  : new mongoose.Types.ObjectId(`${userId}`),
+                "$dislikes.dislikedBy",
+              ],
+            },
+            then: true,
+            else: false,
+          },
+        },
       },
     },
     {
@@ -145,9 +199,12 @@ const getVideoComments = asyncHandler(async (req, res) => {
           fullName: 1,
           userName: 1,
           avatar: 1,
+          _id:1
         },
         likesCount: 1,
         dislikesCount: 1,
+        isLiked: 1,
+        isDisliked: 1,
       },
     },
   ]);

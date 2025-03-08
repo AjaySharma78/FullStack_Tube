@@ -26,6 +26,8 @@ const config = {
   emailPassword: String(process.env.EMAIL_PASSWORD),
   emailPort: String(process.env.EMAIL_PORT),
   port: String(process.env.PORT),
+  socketPort: String(process.env.SOCKET_PORT),
+  cryptoSecret: String(process.env.CRYPTOJS_SECRET),
 };
 
 export default config;

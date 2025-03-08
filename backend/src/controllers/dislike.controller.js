@@ -70,12 +70,12 @@ const toggleVideoCommentDisLike = asyncHandler(async (req, res) => {
     });
     return res
       .status(201)
-      .json(new ApiResponse(201, disLiked, "Video Disliked successfully"));
+      .json(new ApiResponse(201, disLiked, "Video Comment Disliked successfully"));
   } else {
     await Dislike.findByIdAndDelete(dislike._id);
     return res
       .status(200)
-      .json(new ApiResponse(200, null, "Video unliked successfully"));
+      .json(new ApiResponse(200, null, "Video Comment unliked successfully"));
   }
 });
 

@@ -6,6 +6,7 @@ import {
   removeVideoFromPlaylist,
   removeAllVideoFromPlaylist,
   getUserPlaylist,
+  deletePlaylist
 } from "../controllers/playlist.controller.js";
 
 const router = Router();
@@ -17,7 +18,8 @@ router.use(verifyUser);
 router.route("/").post(createPlaylist);
 router
   .route("/remove-all-video/playlist/:playlistId")
-  .delete(removeAllVideoFromPlaylist);
+  .patch(removeAllVideoFromPlaylist)
+  .delete(deletePlaylist);
 router
   .route("/add-remove/video/playlist")
   .patch(addVideoToPlaylist)

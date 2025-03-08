@@ -1,21 +1,30 @@
-import asyncHandler from "../utils/asyncHandler.js";
-import { ApiErrors } from "../utils/apiError.js";
+import { uploadTOCloudinary, deleteFromCloudinary } from "../service/cloudinaryService.js";
 import { ApiResponse } from "../utils/apiResponse.js";
-import { User } from "../models/user.model.js";
+import asyncHandler from "../utils/asyncHandler.js";
 import { sendMail } from "../service/sendMail.js";
-import {
-  uploadTOCloudinary,
-  deleteFromCloudinary,
-} from "../service/cloudinaryService.js";
-import jwt from "jsonwebtoken";
+import { ApiErrors } from "../utils/apiError.js";
+import { User } from "../models/user.model.js";
 import config from "../env/config.js";
-import fs from "fs";
+import speakeasy from "speakeasy";
+import CryptoJS from "crypto-js";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import QRCode from "qrcode";
+import fs from "fs";
 
 function unlinkPath(avatarLocalPath, coverImageLocalPath) {
   if (avatarLocalPath) fs.unlinkSync(avatarLocalPath);
   if (coverImageLocalPath) fs.unlinkSync(coverImageLocalPath);
 }
+
+const generateBackupCode = () => {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let backupCode = '';
+    for (let i = 0; i < 10; i++) {
+      backupCode += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return backupCode;
+};
 
 const registerUsers = asyncHandler(async (req, res) => {
   const { userName, email, fullName, password } = req.body;
@@ -24,7 +33,7 @@ const registerUsers = asyncHandler(async (req, res) => {
     [userName, email, fullName, password].some((field) => field?.trim() === "")
   ) {
     unlinkPath(req.files?.avatar[0]?.path, req.files?.coverImage[0]?.path);
-    throw new ApiErrors(400, "Please fill all fields");
+    throw ApiErrors.badRequest("Please fill all fields");
   }
 
   const existedUser = await User.findOne({
@@ -33,7 +42,7 @@ const registerUsers = asyncHandler(async (req, res) => {
 
   if (existedUser) {
     unlinkPath(req.files?.avatar[0]?.path, req.files?.coverImage[0]?.path);
-    throw new ApiErrors(400, "User already existed");
+    throw ApiErrors.badRequest("Email already exists");
   }
 
   const avatarPath = req.files?.avatar[0]?.path;
@@ -49,14 +58,14 @@ const registerUsers = asyncHandler(async (req, res) => {
 
   if (!avatarPath) {
     unlinkPath(avatarPath, coverImagePath);
-    throw new ApiErrors(400, "Avatar is required");
+    throw ApiErrors.badRequest("Avatar is required");
   }
 
-  const avatar = await uploadTOCloudinary(avatarPath, "user");
-  const coverImage = await uploadTOCloudinary(coverImagePath, "user");
+  const avatar = await uploadTOCloudinary(avatarPath, "user", "image");
+  const coverImage = await uploadTOCloudinary(coverImagePath, "user", "image");
 
   if (!avatar) {
-    throw new ApiErrors(500, "Something went wrong while uploading avatar");
+    throw ApiErrors.internal("Something went wrong while uploading avatar");
   }
 
   const user = await User.create({
@@ -81,61 +90,92 @@ const registerUsers = asyncHandler(async (req, res) => {
     {
       new: true,
     }
-  ).select("-password -refreshToken");
+  ).select(
+    "-password -refreshToken -verifyToken -verifyTokenExpires -isEmailVerified -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory -coverImage -avatar -userName "
+  );
 
   if (!createdUser) {
-    throw new ApiErrors(500, "Something went wrong while creating user");
+    throw ApiErrors.internal("Something went wrong while creating user");
   }
 
   sendMail({
     email: user.email,
     subject: "Email Verification",
-    text: `http://localhost:3000/api/v1/users/verify-email?token=${emailToken}`,
+    text: `http://localhost:5173/verify-email?token=${emailToken}`,
   });
 
-  res
+  setTimeout(async () => {
+    const updatedUser = await User.findById(user._id);
+    if (updatedUser && !updatedUser.isEmailVerified) {
+      await User.findByIdAndDelete(user._id);
+      sendMail({
+        email: user.email,
+        subject: "Account Deletion",
+        text: "Your account has been deleted as the email was not verified within 15 minutes.",
+      });
+    }
+  }, 15 * 60 * 1000);
+
+  return res
     .status(201)
     .json(new ApiResponse(201, createdUser, "User registred successfully"));
 });
 
 const loginUsers = asyncHandler(async (req, res) => {
-  const { userName, email, password } = req.body;
+  const { identifier, password } = req.body;
 
-  if (!userName && !email) {
-    throw new ApiErrors(400, "Please provide username or email");
+  if (!identifier) {
+    throw ApiErrors.badRequest("Please provide username or email");
   }
 
   if (!password) {
-    throw new ApiErrors(400, "Please provide password");
+    throw ApiErrors.badRequest("Please provide password");
   }
 
   const existedUser = await User.findOne({
-    $or: [{ userName }, { email }],
+    $or: [{ userName: identifier }, { email: identifier }],
   });
 
   if (!existedUser) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
   const isPasswordCorrect = await existedUser.isPasswordCorrect(password);
 
   if (!isPasswordCorrect) {
-    throw new ApiErrors(401, "Password is incorrect");
+    throw ApiErrors.unauthorized("Password is incorrect");
   }
 
   if (!existedUser.isEmailVerified) {
-    throw new ApiErrors(401, "Please verify your email to login");
+    throw ApiErrors.unauthorized("Please verify your email to login");
+  }
+
+  if (existedUser.isTwoFactorEnabled) {
+    const userInfo = await User.findById(existedUser._id).select(
+      "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
+    );
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { twoFactorEnabled: true, _id: userInfo._id },
+          "Two factor authentication enabled"
+        )
+      );
   }
 
   const { accessToken, refreshToken } =
     await generateAccessTokenAndRefreshToken(existedUser._id);
 
   const loggedInUser = await User.findById(existedUser._id).select(
-    "-password -refreshToken"
+    "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
   );
 
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
   return res
@@ -167,8 +207,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "strict",
   };
-
   return res
     .status(200)
     .clearCookie("refreshToken", options)
@@ -181,31 +221,37 @@ const changePassword = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    throw new ApiErrors(400, "Invalid user id");
+    throw ApiErrors.badRequest("Invalid user id");
   }
 
   if (!oldPassword || !newPassword) {
-    throw new ApiErrors(400, "Please provide old password and new password");
+    throw ApiErrors.badRequest("Please provide old password and new password");
   }
 
   const user = await User.findById(userId);
 
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   if (userId.toString() !== user._id.toString()) {
-    throw new ApiErrors(403, "You are not authorized to update this user");
+    throw ApiErrors.forbidden("You are not authorized to update this user");
   }
 
   const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
 
   if (!isPasswordCorrect) {
-    throw new ApiErrors(401, "Old password is incorrect");
+    throw ApiErrors.unauthorized("Old password is incorrect");
   }
 
   user.password = newPassword;
   await user.save({ validateBeforeSave: false });
+  
+  sendMail({
+    email: user.email,
+    subject: "Password Changed",
+    text: "Your password has been changed successfully",
+  });
 
   return res
     .status(200)
@@ -217,21 +263,21 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    throw new ApiErrors(400, "Invalid user id");
+    throw ApiErrors.badRequest("Invalid user id");
   }
 
   if (!userName && !email && !fullName) {
-    throw new ApiErrors(400, "Please provide username or email or fullName");
+    throw ApiErrors.badRequest("Please provide username or email or fullName");
   }
 
   const user = await User.findById(userId).select("-password -refreshToken");
 
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   if (userId.toString() !== user._id.toString()) {
-    throw new ApiErrors(403, "You are not authorized to update this email");
+    throw ApiErrors.forbidden("You are not authorized to update this email");
   }
 
   if (userName) {
@@ -239,8 +285,7 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
     if (user.lastUsernameChange && user.lastUsernameChange > threeMonthsAgo) {
-      throw new ApiErrors(
-        400,
+      throw ApiErrors.badRequest(
         "You can only change your username once every three months"
       );
     }
@@ -251,8 +296,10 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
   if (fullName) {
     user.fullName = fullName;
   }
-
+  
+  let previousEmail;
   if (email) {
+    previousEmail = user.email;
     user.email = email;
     user.isEmailVerified = false;
     const emailToken = await generateToken(user._id);
@@ -261,8 +308,24 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
     sendMail({
       email: user.email,
       subject: "Email Verification",
-      text: `http://localhost:3000/api/v1/users/verify-email?token=${emailToken}`,
+      text: `http://localhost:5173/verify-email?token=${emailToken}`,
     });
+
+    setTimeout(async () => {
+      const updatedUser = await User.findById(userId);
+      if (updatedUser && !updatedUser.isEmailVerified) {
+        updatedUser.email = previousEmail;
+        updatedUser.isEmailVerified = true;
+        updatedUser.verifyToken = null;
+        updatedUser.verifyTokenExpires = null;
+        await updatedUser.save({ validateBeforeSave: false });
+        sendMail({
+          email: previousEmail,
+          subject: "Email Reverted",
+          text: "Your email has been reverted to the previous email as the new email was not verified within  minutes.",
+        });
+      }
+    }, 5 * 60 * 1000); 
   }
 
   await user.save({ validateBeforeSave: false });
@@ -273,56 +336,54 @@ const updateUserEmailUsername = asyncHandler(async (req, res) => {
       {
         user,
       },
-      "User updated successfully. Please verify your email if it was changed otherwise you can't login"
+      `User updated ${fullName ? "fullName" : email ? "email" : "userName"}.${email ? "Please verify your email within 5 minuets" : ""}`
     )
   );
 });
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const Token = req.cookies.refreshToken || req.body.refreshToken;
-
+  const Token = req.cookies?.refreshToken || req.body.refreshToken;
   if (!Token) {
-    throw new ApiErrors(401, "You are not authenticated");
+    throw ApiErrors.badRequest("Invalid token");
   }
-  try {
-    const decodedToken = await jwt.verify(Token, config.refreshTokenSecret);
+  const decodedToken = await jwt.verify(Token, config.refreshTokenSecret);
 
-    const user = await User.findById(decodedToken?._id);
+  const user = await User.findById(decodedToken?._id);
 
-    if (!user) {
-      throw new ApiErrors(401, "You are not authenticated or user not found");
-    }
+  if (!user) {
+    throw ApiErrors.notFound("User not found");
+  }
 
-    if (Token !== user?.refreshToken) {
-      throw new ApiErrors(401, "not matched");
-    }
+  if (Token !== user?.refreshToken) {
+    throw ApiErrors.forbidden("Invalid token");
+  }
 
-    const { accessToken, refreshToken } =
-      await generateAccessTokenAndRefreshToken(user._id);
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(user._id);
 
-    const loggedInUser = await User.findById(user._id).select(
-      "-password -refreshToken"
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+  const token = await loggedInUser.generateTokenForCookies();
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  return res
+    .status(200)
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { user: loggedInUser, accessToken, refreshToken },
+        "User logged in successfully"
+      )
     );
-
-    const options = {
-      httpOnly: true,
-      secure: true,
-    };
-
-    return res
-      .status(200)
-      .cookie("refreshToken", refreshToken, options)
-      .cookie("accessToken", accessToken, options)
-      .json(
-        new ApiResponse(
-          200,
-          { user: loggedInUser, accessToken, refreshToken },
-          "User logged in successfully"
-        )
-      );
-  } catch (error) {
-    throw new ApiErrors(401, error?.message || "invalid token");
-  }
 });
 
 const generateAccessTokenAndRefreshToken = async (userId) => {
@@ -336,7 +397,7 @@ const generateAccessTokenAndRefreshToken = async (userId) => {
 
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiErrors(500, "Something went wrong while generating tokens");
+    throw ApiErrors.internal("Something went wrong while generating tokens");
   }
 };
 
@@ -346,7 +407,7 @@ const generateToken = async (userId) => {
     const emailToken = await user.generateEmailToken();
     return emailToken;
   } catch (error) {
-    throw new ApiErrors(500, "Something went wrong while generating tokens");
+    throw ApiErrors.internal("Something went wrong while generating tokens");
   }
 };
 
@@ -354,7 +415,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    throw new ApiErrors(400, "Invalid user id");
+    throw ApiErrors.badRequest("Invalid user id");
   }
 
   const user = await User.findById(userId).select("-password -refreshToken");
@@ -362,26 +423,25 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   if (!user) {
     unlinkPath(avatarPath, null);
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   if (!avatarPath) {
     unlinkPath(avatarPath, null);
-    throw new ApiErrors(400, "Avatar is required");
+    throw ApiErrors.badRequest("Avatar is required");
   }
 
   if (userId.toString() !== user._id.toString()) {
     unlinkPath(avatarPath, null);
-    throw new ApiErrors(
-      403,
+    throw ApiErrors.forbidden(
       "You are not authorized to update this user avatar"
     );
   }
 
-  const avatar = await uploadTOCloudinary(avatarPath, "user");
+  const avatar = await uploadTOCloudinary(avatarPath, "user", "image");
 
   if (!avatar) {
-    throw new ApiErrors(500, "Something went wrong while uploading avatar");
+    throw ApiErrors.internal("Something went wrong while uploading avatar");
   }
 
   const oldAvatar = user.avatar;
@@ -409,33 +469,32 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    throw new ApiErrors(400, "Invalid user id");
+    throw ApiErrors.badRequest("Invalid user id");
   }
 
   const user = await User.findById(userId).select("-password -refreshToken");
 
   if (!user) {
     unlinkPath(null, coverImagePath);
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   if (!coverImagePath) {
     unlinkPath(null, coverImagePath);
-    throw new ApiErrors(400, "Cover image is required");
+    throw ApiErrors.badRequest("Cover image is required");
   }
 
   if (userId.toString() !== user._id.toString()) {
     unlinkPath(null, coverImagePath);
-    throw new ApiErrors(
-      403,
+    throw ApiErrors.forbidden(
       "You are not authorized to update this user cover image"
     );
   }
 
-  const coverImage = await uploadTOCloudinary(coverImagePath, "user");
+  const coverImage = await uploadTOCloudinary(coverImagePath, "user", "image");
 
   if (!coverImage) {
-    throw new ApiErrors(
+    throw ApiErrors.internal(
       500,
       "Something went wrong while uploading cover image"
     );
@@ -462,11 +521,24 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const userResInfo = {
+    _id: user._id,
+    userName: user.userName,
+    email: user.email,
+    fullName: user.fullName,
+    avatar: user.avatar,
+    coverImage: user.coverImage,
+    isEmailVerified: user.isEmailVerified,
+    isTwoFactorEnabled: user.isTwoFactorEnabled,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
   return res.status(200).json(
     new ApiResponse(
       200,
       {
-        user: req.user,
+        user: userResInfo,
       },
       "User fetched successfully"
     )
@@ -477,7 +549,7 @@ const verifyUserEmail = asyncHandler(async (req, res) => {
   const token = req.query?.token || req.body?.token;
 
   if (!token) {
-    throw new ApiErrors(401, "Invalid token");
+    throw ApiErrors.unauthorized("Invalid token");
   }
 
   const user = await User.findOne({
@@ -486,7 +558,7 @@ const verifyUserEmail = asyncHandler(async (req, res) => {
   });
 
   if (!user) {
-    throw new ApiErrors(401, "Invalid token or token expired");
+    throw ApiErrors.unauthorized("Invalid token or token expired");
   }
 
   user.isEmailVerified = true;
@@ -508,11 +580,16 @@ const verifyUserEmail = asyncHandler(async (req, res) => {
 const resendEmailVerification = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) {
-    throw new ApiErrors(400, "Please provide email");
+    throw ApiErrors.badRequest("Please provide email");
   }
   const user = await User.findOne({ email });
+
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
+  }
+
+  if (user.isEmailVerified) {
+    throw ApiErrors.badRequest("Email is already verified");
   }
 
   const emailToken = await generateToken(user._id);
@@ -527,24 +604,24 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
     {
       new: true,
     }
-  ).select("-password -refreshToken");
+  ).select(
+    "-password -refreshToken -verifyToken -verifyTokenExpires -isEmailVerified -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
+  );
 
   if (!userInfo) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   sendMail({
     email: user.email,
     subject: "Email Verification",
-    text: `http://localhost:3000/api/v1/users/verify-email?token=${emailToken}`,
+    text: `http://localhost:5173/verify-email?token=${emailToken}`,
   });
 
   return res.status(200).json(
     new ApiResponse(
       200,
-      {
-        userInfo,
-      },
+      {},
       "Email verification sent successfully"
     )
   );
@@ -553,11 +630,11 @@ const resendEmailVerification = asyncHandler(async (req, res) => {
 const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
   const { email } = req.body;
   if (!email) {
-    throw new ApiErrors(400, "Please provide email");
+    throw ApiErrors.badRequest("Please provide email");
   }
   const user = await User.findOne({ email });
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   const forgotPasswordEmailToken = await generateToken(user._id);
@@ -575,21 +652,19 @@ const sendForgotPasswordEmail = asyncHandler(async (req, res) => {
   ).select("-password -refreshToken");
 
   if (!userInfo) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   sendMail({
     email: user.email,
     subject: "Reset Password",
-    text: `http://localhost:3000/api/v1/users/reset-password?token=${forgotPasswordEmailToken}`,
+    text: `${config.clientUrl}/reset-password?token=${forgotPasswordEmailToken}`,
   });
 
   return res.status(200).json(
     new ApiResponse(
       200,
-      {
-        userInfo,
-      },
+      {},
       "Reset password email sent successfully"
     )
   );
@@ -599,7 +674,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   const { newPassword, token } = req.body;
 
   if (!newPassword || !token) {
-    throw new ApiErrors(400, "Please provide new password and token");
+    throw ApiErrors.badRequest("Please provide new password and token");
   }
 
   const user = await User.findOne({
@@ -607,7 +682,7 @@ const resetPassword = asyncHandler(async (req, res) => {
     forgotPasswordTokenExpires: { $gt: Date.now() },
   });
   if (!user) {
-    throw new ApiErrors(401, "Invalid token or token expired");
+    throw ApiErrors.unauthorized("Invalid token or token expired");
   }
 
   user.password = newPassword;
@@ -627,43 +702,56 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 const googleOAuthCallback = asyncHandler(async (req, res) => {
-  const { accessToken, refreshToken, options } = req.authInfo;
+  const {accessToken, refreshToken, options } = req.authInfo;
   const user = req.user;
 
-  res
+  if (user.isTwoFactorEnabled) {
+    const userInfo = await User.findById(user._id).select(
+      "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
+    );
+    
+    const encryptedUserId = CryptoJS.AES.encrypt(JSON.stringify(userInfo._id), config.cryptoSecret ).toString();
+
+    return res
+     .status(200)
+     .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+ }
+
+ return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        { user, accessToken, refreshToken },
-        "User logged in successfully"
-      )
-    );
+    .redirect(`${config.clientUrl}`);
 });
 
 const githubOAuthCallback = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken, options } = req.authInfo;
   const user = req.user;
-  res
+
+  if (user.isTwoFactorEnabled) {
+    const userInfo = await User.findById(user._id).select(
+      "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
+    );
+
+    const encryptedUserId = CryptoJS.AES.encrypt(JSON.stringify(userInfo._id), config.cryptoSecret ).toString();
+
+     return res
+      .status(200)
+      .redirect(`${config.clientUrl}/2fa?twoFactorEnabled=true&userId=${encodeURIComponent(encryptedUserId)}`);
+  }
+
+ return res
     .status(200)
     .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
-    .json(
-      new ApiResponse(
-        200,
-        { user, accessToken, refreshToken },
-        "User logged in successfully"
-      )
-    );
+    .redirect(`${config.clientUrl}`);
 });
 
 const getloginUserChannelProfile = asyncHandler(async (req, res) => {
   const userId = req.user?._id;
 
   if (!userId) {
-    throw new ApiErrors(400, "Invalid user id");
+    throw ApiErrors.badRequest("Invalid user id");
   }
 
   const user = await User.aggregate([
@@ -745,7 +833,7 @@ const getloginUserChannelProfile = asyncHandler(async (req, res) => {
   ]);
 
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   return res
@@ -757,9 +845,10 @@ const getloginUserChannelProfile = asyncHandler(async (req, res) => {
 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { userName } = req.params;
+  const { userId } = req.query;
 
   if (!userName.trim()) {
-    throw new ApiErrors(400, "Invalid username");
+    throw ApiErrors.badRequest("Invalid username");
   }
 
   const user = await User.aggregate([
@@ -796,17 +885,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
               isPublished: true,
             },
           },
-          {
-            $project: {
-              title: 1,
-              description: 1,
-              duration: 1,
-              views: 1,
-              videoFile: 1,
-              thumbnail: 1,
-              createdAt: 1,
-            },
-          },
         ],
       },
     },
@@ -817,7 +895,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         videoCount: { $size: "$videos" },
         isSubscribed: {
           $cond: {
-            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            if: {
+              $in: [
+                userId == "null"
+                  ? userId
+                  : new mongoose.Types.ObjectId(`${userId}`),
+                "$subscribers.subscriber",
+              ],
+            },
             then: true,
             else: false,
           },
@@ -826,6 +911,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     },
     {
       $project: {
+        _id: 1,
         fullName: 1,
         userName: 1,
         avatar: 1,
@@ -841,7 +927,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   ]);
 
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   return res
@@ -860,15 +946,16 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 const getWatchHistory = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user?._id).populate({
     path: "watchHistory",
-    select: "title thumbnail videoFile duration views isPublished videoOwner",
+    select:
+      "_id description title thumbnail videoFile duration views isPublished videoOwner createdAt isLiked isDisliked numberOfLikes numberOfDislikes",
     populate: {
       path: "videoOwner",
-      select: "userName fullName avatar",
+      select: "_id userName fullName avatar isSubscribed subscriberCount",
     },
   });
 
   if (!user) {
-    throw new ApiErrors(404, "User not found");
+    throw ApiErrors.notFound("User not found");
   }
 
   return res
@@ -882,6 +969,200 @@ const getWatchHistory = asyncHandler(async (req, res) => {
           : "User watch history fetched successfully"
       )
     );
+});
+
+const userNameValidation = asyncHandler(async (req, res) => {
+  const { userName } = req.body;
+  if (!userName) {
+    throw ApiErrors.badRequest("Please provide username");
+  }
+
+  const user = await User.findOne({ userName: userName.toLowerCase() }).select(
+    "userName"
+  );
+
+  if (user) {
+    throw ApiErrors.badRequest("Username already exists");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Username is available"));
+});
+
+const generate2FASecret = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    throw ApiErrors.badRequest("Invalid user id");
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw ApiErrors.notFound("User not found");
+  }
+
+  const secret = speakeasy.generateSecret({
+    name: "Aakirtsharma07.vercel.app",
+    length: 64,
+    symbols: true,
+  });
+
+  user.twoFactorBackupCodes = [];
+
+  const backupCodes = new Set();
+  while (backupCodes.size < 10) {
+    backupCodes.add(generateBackupCode());
+  }
+  
+  user.twoFactorSecret = secret.base32;
+  user.twoFactorBackupCodes = Array.from(backupCodes);
+  await user.save({ validateBeforeSave: false });
+
+  const otpauthUrl = speakeasy.otpauthURL({
+    secret: secret.base32,
+    label: `${user.email}`,
+    issuer: "https://ajaysharma07.vercel.app",
+    encoding: "base64",
+  });
+
+  const data_url = await QRCode.toDataURL(otpauthUrl);
+
+  if (!data_url) {
+    throw ApiErrors.internal("Something went wrong while generating QR code");
+  }
+
+
+  sendMail({
+    email: user.email,
+    subject: "Your 2FA Backup Codes",
+    backupCodes: Array.from(backupCodes),
+  });
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { secret: secret.base32, qrCode: data_url },
+        "Please scan the QR code to enable 2FA. Backup codes have been sent to your email. Please save them in a safe place."
+      )
+    );
+});
+
+const verify2FAToken = asyncHandler(async (req, res) => {
+  const { token, userId, backupCode } = req.body;
+  
+  if (!userId) {
+    throw ApiErrors.badRequest("Invalid user id");
+  }
+
+  const user = await User.findById(userId).select(
+    "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory"
+  );
+
+  if (!user) {
+    throw ApiErrors.notFound("User not found");
+  }
+
+  if (backupCode ) {
+    if (!user.twoFactorBackupCodes.includes(backupCode)) {
+      throw ApiErrors.unauthorized("Invalid backup code");
+    }
+    user.twoFactorBackupCodes = [];
+    user.twoFactorSecret = null;
+    user.isTwoFactorEnabled = false;
+    await user.save({ validateBeforeSave: false });
+
+    const { accessToken, refreshToken } =
+      await generateAccessTokenAndRefreshToken(user._id);
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    };
+
+    return res
+      .status(200)
+      .cookie("refreshToken", refreshToken, options)
+      .cookie("accessToken", accessToken, options)
+      .json(
+        new ApiResponse(
+          200,
+          { user, accessToken, refreshToken },
+          "Backup code verified successfully. 2FA has been disabled. Please set up 2FA again."
+        )
+      );
+  }
+
+  const verified = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: "base64",
+    token,
+  });
+
+  if (!verified) {
+    throw ApiErrors.unauthorized("Invalid or expired token");
+  }
+
+  user.isTwoFactorEnabled = true;
+  await user.save({ validateBeforeSave: false });
+
+  const { accessToken, refreshToken } =
+    await generateAccessTokenAndRefreshToken(user._id);
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+
+  res
+    .status(200)
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json(
+      new ApiResponse(
+        200,
+        { user, accessToken, refreshToken },
+        "2FA token verified successfully"
+      )
+    );
+});
+
+const disable2FA = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const { token } = req.body;
+
+  if (!userId) {
+    throw ApiErrors.badRequest("Invalid user id");
+  }
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw ApiErrors.notFound("User not found");
+  }
+
+  const verified = speakeasy.totp.verify({
+    secret: user.twoFactorSecret,
+    encoding: "base64",
+    token,
+  });
+
+  if (!verified) {
+    throw ApiErrors.unauthorized("Invalid or expired token");
+  }
+
+  user.twoFactorSecret = null;
+  user.isTwoFactorEnabled = false;
+  await user.save({ validateBeforeSave: false });
+
+  res.status(200).json(new ApiResponse(200, {}, "2FA disabled successfully"));
 });
 
 export {
@@ -904,4 +1185,8 @@ export {
   getloginUserChannelProfile,
   getUserChannelProfile,
   getWatchHistory,
+  userNameValidation,
+  generate2FASecret,
+  verify2FAToken,
+  disable2FA,
 };

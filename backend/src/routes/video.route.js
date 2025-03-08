@@ -9,14 +9,18 @@ import {
   updateVideoTitledescription,
   deleteVideo,
   toggleVideoStatus,
+  searchVideoTitles
 } from "../controllers/video.controller.js";
 import { verifyUser } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { compressVideo } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
 router.get("/", getVideos);
 router.get("/:videoId/:userId", getVideo);
+router.route("/:videoId/increment-views").patch(incrementViewCount);
+router.route("/search").get(searchVideoTitles);
 
 router.use(verifyUser);
 router.get("/user-all-video", getUserVideos);
@@ -31,6 +35,11 @@ router.route("/").post(
       maxCount: 1,
     },
   ]),
+  (req, res, next) => {
+    req.io = req.app.get("io");
+    next();
+  },
+  compressVideo,
   createVideo
 );
 
@@ -43,6 +52,6 @@ router
   .route("/update-title-description/:videoId")
   .patch(updateVideoTitledescription);
 router.route("/:videoId/toggle-status").patch(toggleVideoStatus);
-router.route("/:videoId/increment-views").patch(incrementViewCount);
+
 
 export default router;

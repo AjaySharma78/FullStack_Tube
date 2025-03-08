@@ -13,7 +13,7 @@ import {
 
 const router = Router();
 
-router.route("/v/:videoId").get(getVideoComments);
+router.route("/v/:videoId/:userId").get(getVideoComments);
 router.route("/t/:tweetId").get(getTweetComments);
 
 router.use(verifyUser);

@@ -21,7 +21,7 @@ const toggleSubscribe = asyncHandler(async (req, res) => {
     }
     return res
       .status(200)
-      .json(new ApiResponse(200, Unsubscribed, "Unsubscribed successfully"));
+      .json(new ApiResponse(200, Unsubscribed,"Unsubscribed successfully"));
   }
 
   const subscribed = await Subscription.create({
@@ -38,7 +38,7 @@ const toggleSubscribe = asyncHandler(async (req, res) => {
 
   return res
     .status(201)
-    .json(new ApiResponse(201, subscribedChannel, "Subscribed successfully"));
+    .json(new ApiResponse(201, subscribedChannel,"Subscribed successfully"));
 });
 
 const subscription = asyncHandler(async (req, res) => {
@@ -232,6 +232,7 @@ const subscribedChannel = asyncHandler(async (req, res) => {
     {
       $project: {
         subscribedChannelInfo: {
+          _id: 1,
           userName: 1,
           fullName: 1,
           avatar: 1,

@@ -4,12 +4,14 @@ import {
   updateTweet,
   deleteTweet,
   getTweetById,
+  allTweets
 } from "../controllers/tweet.controller.js";
 import { Router } from "express";
 import { verifyUser } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
+router.get("/all", allTweets);
 router.use(verifyUser);
 
 router

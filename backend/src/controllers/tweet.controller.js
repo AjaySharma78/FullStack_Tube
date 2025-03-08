@@ -61,7 +61,7 @@ const createTweet = asyncHandler(async (req, res, next) => {
     const uploadedImages = [];
     try {
       for (const img of images) {
-        const result = await uploadTOCloudinary(img, "tweet");
+        const result = await uploadTOCloudinary(img, "tweet", "image");
         if (!result) {
           throw new ApiErrors(500, "Image upload failed");
         }
@@ -80,12 +80,12 @@ const createTweet = asyncHandler(async (req, res, next) => {
     tweetData.videos = [];
     try {
       for (const vid of videos) {
-        const result = await uploadTOCloudinary(vid, "tweet");
+        const result = await uploadTOCloudinary(vid, "tweet", "video");
         if (!result) {
           throw new ApiErrors(500, "Video upload failed");
         }
         tweetData.videos.push({
-          video: result.secure_url,
+          video: result.playback_url,
           duration: result.duration,
         });
       }
@@ -405,4 +405,68 @@ const deleteTweet = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Tweet deleted successfully"));
 });
 
-export { createTweet, getUsertweets, updateTweet, deleteTweet, getTweetById };
+
+const allTweets = asyncHandler(async (req, res) => {
+  const tweets = await Tweet.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "owner",
+      },
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes",
+      },
+    },
+    {
+      $lookup: {
+        from: "dislikes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "dislikes",
+      },
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        dislikesCount: { $size: "$dislikes" },
+        tweetOwner: { $first: "$owner" },
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+    {
+      $project: {
+        _id:1,
+        content: 1,
+        images: 1,
+        videos: 1,
+        createdAt: 1,
+        likesCount: 1,
+        dislikesCount: 1,
+        tweetOwner: {
+          _id:1,
+          userName: 1,
+          fullName: 1,
+          avatar: 1,
+        },
+      },
+    },
+  ]);
+
+  if (!tweets || tweets.length === 0) {
+    throw new ApiErrors(404, "No tweets found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tweets, "Tweets fetched successfully"));
+})
+export { createTweet, getUsertweets, updateTweet, deleteTweet, getTweetById,allTweets };
