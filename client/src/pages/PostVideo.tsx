@@ -31,7 +31,6 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
     handleSubmit,
     formState,
     watch,
-    setValue,
     control,
     getValues,
   } = useForm<VideoUploadInterface>({
@@ -46,7 +45,6 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
   const [compressProgress, setCompressProgress] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const formDataRef = useRef<VideoUploadInterface | null>(null);
   const thumbnail = watch("thumbnail");
   const { errors } = formState;
   const video = watch("video");
@@ -76,37 +74,9 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
     };
   }, []);
 
-  const storeFileUrlInLocalStorage = (file: File, key: string) => {
-    const fileUrl = URL.createObjectURL(file);
-    localStorage.setItem(key, fileUrl);
-  };
 
-  useEffect(() => {
-    const savedThumbnail = localStorage.getItem("thumbnailPreview");
-    if (savedThumbnail) setThumbnailPreview(savedThumbnail);
-
-    const savedVideo = localStorage.getItem("videoPreview");
-    if (savedVideo) setVideoPreview(savedVideo);
-
-    const savedData = localStorage.getItem("videoUploadData");
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      Object.keys(parsedData).forEach((key) =>
-        setValue(key as keyof VideoUploadInterface, parsedData[key])
-      );
-    }
-  }, []);
 
   const create: SubmitHandler<VideoUploadInterface> = async (data) => {
-    formDataRef.current = data;
-    localStorage.setItem("videoUploadData", JSON.stringify(data));
-    if (data.thumbnail)
-      storeFileUrlInLocalStorage(
-        thumbnail[0] as unknown as File,
-        "thumbnailPreview"
-      );
-    if (data.video)
-      storeFileUrlInLocalStorage(video[0] as unknown as File, "videoPreview");
 
     toast.promise(
       new Promise<string>(async (resolve, reject) => {
@@ -125,9 +95,6 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
             if (response.message === "Video uploaded successfully") {
               resolve("Video uploaded successfully");
               dispatch(setVideos([...videos, response.data]));
-              localStorage.removeItem("videoUploadData");
-              localStorage.removeItem("thumbnailPreview");
-              localStorage.removeItem("videoPreview");
               const encryptedVideoId = encryptData(response.data._id);
               const encryptedUserId = encryptData(user ? user._id : null);
               const encryptedPlaylistOwnerId = encryptData(null);

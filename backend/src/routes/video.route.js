@@ -13,6 +13,7 @@ import {
 } from "../controllers/video.controller.js";
 import { verifyUser } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { compressVideo } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
@@ -34,6 +35,11 @@ router.route("/").post(
       maxCount: 1,
     },
   ]),
+  (req, res, next) => {
+    req.io = req.app.get("io");
+    next();
+  },
+  compressVideo,
   createVideo
 );
 

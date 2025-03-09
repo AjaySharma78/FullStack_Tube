@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.resolve("../upload"));
+    cb(null, path.resolve("./public/temp"));
   },
   filename: function (req, file, cb) {
     return cb(null, `${Date.now()}-${file.originalname}`);
@@ -96,4 +96,3 @@ export const compressVideo = (req, res, next) => {
 
     ffmpegProcess.run();
 };
-

@@ -20,13 +20,13 @@ function unlinkPath(videoPath, thumbnailPath) {
 }
 
 const createVideo = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
-
+  const { title, description, isPublished } = req.body;
+  
   if (!req.files || !req.files.thumbnail || !req.files.video) {
     unlinkPath(req.files?.video[0].path, req.files?.thumbnail[0].path);
     throw new ApiErrors(400, "Please upload video and thumbnail");
   }
-
+  
   const thumbnail = req.files?.thumbnail[0].path;
   const video = req.files?.video[0].path;
   
@@ -35,8 +35,10 @@ const createVideo = asyncHandler(async (req, res) => {
     throw new ApiErrors(400, "Please provide title, description and isPublished");
   }
 
-  const thumbnailUpload = await uploadTOCloudinary(thumbnail, "video");
-  const videoUpload = await uploadTOCloudinary(video, "video");
+  const [thumbnailUpload, videoUpload] = await Promise.all([
+    await uploadTOCloudinary(thumbnail, "video", "image"),
+    await uploadTOCloudinary(video, "video", "video")
+  ])
 
   if (!thumbnailUpload || !videoUpload) {
     throw new ApiErrors(500, "Something went wrong while uploading files");
