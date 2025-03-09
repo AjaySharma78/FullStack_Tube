@@ -184,7 +184,6 @@ const loginUsers = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".fullstack-tube.onrender.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -382,7 +381,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".fullstack-tube.onrender.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 
@@ -1095,7 +1093,6 @@ const verify2FAToken = asyncHandler(async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: "None",
-      domain: ".fullstack-tube.onrender.com",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
     return res
@@ -1131,7 +1128,6 @@ const verify2FAToken = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "None",
-    domain: ".fullstack-tube.onrender.com",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   };
 

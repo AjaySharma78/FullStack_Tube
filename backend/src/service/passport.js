@@ -68,7 +68,6 @@ passport.use(
           httpOnly: true, 
           secure: true, 
           sameSite: "None",
-          domain: ".fullstack-tube.onrender.com",
           maxAge: 7 * 24 * 60 * 60 * 1000,
         };
         return done(null,user, { accessToken, refreshToken, options });
@@ -146,7 +145,6 @@ passport.use(
           httpOnly: true, 
           secure: true, 
           sameSite: "None",
-          domain: ".fullstack-tube.onrender.com",
           maxAge: 7 * 24 * 60 * 60 * 1000,
         };
 
