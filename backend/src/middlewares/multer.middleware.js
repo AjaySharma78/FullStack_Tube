@@ -96,3 +96,4 @@ export const compressVideo = (req, res, next) => {
 
     ffmpegProcess.run();
 };
+
