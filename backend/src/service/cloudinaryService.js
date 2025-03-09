@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import config from "../env/config.js";
-import { io } from "../socket.js";
+import { io } from "../app.js";
 // import { Transform } from "stream";
 cloudinary.config({
   cloud_name: config.cloudinaryCloudName,
