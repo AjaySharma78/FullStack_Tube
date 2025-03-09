@@ -4,17 +4,17 @@ import store from '../../store/store.ts';
 import {setupCache} from 'axios-cache-interceptor'
 import config from '../../../env/config.ts';
 
-// const instance = axios.create({
-//     baseURL: config.backendEndpoint,
-//     withCredentials: true,
-// });
-// const api = setupCache(instance);
-
-
-const api = axios.create({
-    baseURL: 'http://localhost:8000/api/v1',
+const instance = axios.create({
+    baseURL: config.backendEndpoint,
     withCredentials: true,
 });
+const api = setupCache(instance);
+
+
+// const api = axios.create({
+//     baseURL: 'http://localhost:8000/api/v1',
+//     withCredentials: true,
+// });
 
 // // api.interceptors.request.use(
 // //     config => {
@@ -67,6 +67,7 @@ const api = axios.create({
 
 // const api = setupCache(instance);
 // Add a request interceptor to include the token in headers
+
 api.interceptors.request.use(
     (config) => {
         const token = store.getState().auth.accessToken;
