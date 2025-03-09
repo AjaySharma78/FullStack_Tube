@@ -35,10 +35,10 @@ router.route("/").post(
       maxCount: 1,
     },
   ]),
-  (req, res, next) => {
-    req.io = req.app.get("io");
-    next();
-  },
+  // (req, res, next) => {
+  //   req.io = req.app.get("io");
+  //   next();
+  // },
   compressVideo,
   createVideo
 );
