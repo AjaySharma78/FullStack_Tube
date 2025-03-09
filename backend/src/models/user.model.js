@@ -73,6 +73,19 @@ const userSchema = new Schema(
       type: String,
       default: null,
     },
+    twoFactorSecret: {
+      type: String,
+      default: null,
+    },
+    isTwoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorBackupCodes: [
+      {
+        type: String,
+      },
+    ],
     watchHistory: [
       {
         type: Schema.Types.ObjectId,
@@ -111,6 +124,19 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
+userSchema.methods.generateTokenForCookies = function () {
+  // id is payload name and this._id is the value from the database
+  return jwt.sign(
+    {
+      _id: this._id,
+      userName: this.userName,
+      email: this.email,
+      fullName: this.fullName,
+    },
+    config.accessTokenSecret
+  );
+};
+
 userSchema.methods.generateRefreshToken = function () {
   // id is payload name and this._id is the value from the database
   return jwt.sign(
@@ -129,7 +155,8 @@ userSchema.methods.generateEmailToken = function () {
       _id: this.id,
       email: this.email,
     },
-    config.emailTokenSecret
+    config.emailTokenSecret,
+    {expiresIn: config.emailTokenExpiresIn}
   );
 };
 

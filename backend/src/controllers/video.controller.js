@@ -13,42 +13,47 @@ import { User } from "../models/user.model.js";
 import { Comment } from "../models/comment.model.js";
 import { Dislike } from "../models/dislike.model.js";
 
+
 function unlinkPath(videoPath, thumbnailPath) {
   if (videoPath) fs.unlinkSync(videoPath);
   if (thumbnailPath) fs.unlinkSync(thumbnailPath);
 }
 
 const createVideo = asyncHandler(async (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, isPublished } = req.body;
 
   if (!req.files || !req.files.thumbnail || !req.files.video) {
     unlinkPath(req.files?.video[0].path, req.files?.thumbnail[0].path);
     throw new ApiErrors(400, "Please upload video and thumbnail");
   }
-
+  
   const thumbnail = req.files?.thumbnail[0].path;
   const video = req.files?.video[0].path;
-
-  if (!title || !description) {
+  
+  if (!title || !description || !isPublished) {
     unlinkPath(video, thumbnail);
-    throw new ApiErrors(400, "Please provide title and description");
+    throw new ApiErrors(400, "Please provide title, description and isPublished");
   }
 
-  const thumbnailUpload = await uploadTOCloudinary(thumbnail, "video");
-  const videoUpload = await uploadTOCloudinary(video, "video");
+  const [thumbnailUpload, videoUpload] = await Promise.all([
+    await uploadTOCloudinary(thumbnail, "video", "image"),
+    await uploadTOCloudinary(video, "video", "video")
+  ])
+
 
   if (!thumbnailUpload || !videoUpload) {
     throw new ApiErrors(500, "Something went wrong while uploading files");
   }
-
+  
   const newVideo = await Video.create({
     title,
     description,
     thumbnail: thumbnailUpload?.secure_url,
     videoFile: videoUpload?.secure_url,
+    videoFileMpeg: videoUpload?.playback_url,
     duration: videoUpload?.duration,
     videoOwner: req.user?._id,
-    isPublished: true,
+    isPublished,
   });
 
   if (!newVideo) {
@@ -146,7 +151,9 @@ const createVideo = asyncHandler(async (req, res) => {
         numberofdislikes: 1,
         isLiked: 1,
         isDisliked: 1,
+        createdAt: 1,
         videoOwner: {
+          _id: 1,
           userName: 1,
           fullName: 1,
           avatar: 1,
@@ -169,7 +176,7 @@ const createVideo = asyncHandler(async (req, res) => {
 const getVideos = asyncHandler(async (req, res) => {
   const {
     pageNumber = 1,
-    limitNumber = 10,
+    limitNumber = 100,
     query,
     sortBy = "createdAt",
     sortType = "desc",
@@ -264,6 +271,7 @@ const getVideos = asyncHandler(async (req, res) => {
               description: 1,
               thumbnail: 1,
               videoFile: 1,
+              videoFileMpeg: 1,
               duration: 1,
               isPublished: 1,
               createdAt: 1,
@@ -312,7 +320,7 @@ const getVideos = asyncHandler(async (req, res) => {
 const getUserVideos = asyncHandler(async (req, res) => {
   const {
     pageNumber = 1,
-    limitNumber = 10,
+    limitNumber = 100,
     query,
     sortBy = "createdAt",
     sortType = "desc",
@@ -396,6 +404,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
               description: 1,
               thumbnail: 1,
               videoFile: 1,
+              videoFileMpeg: 1,
               duration: 1,
               isPublished: 1,
               createdAt: 1,
@@ -443,7 +452,7 @@ const getUserVideos = asyncHandler(async (req, res) => {
 
 const getVideo = asyncHandler(async (req, res) => {
   const { videoId, userId } = req.params;
-
+ 
   if (!isValidObjectId(videoId)) {
     throw new ApiErrors(400, "Invalid videoId");
   }
@@ -452,7 +461,7 @@ const getVideo = asyncHandler(async (req, res) => {
     {
       $match: {
         _id: new mongoose.Types.ObjectId(`${videoId}`),
-        isPublished: true,
+        
       },
     },
     {
@@ -491,7 +500,7 @@ const getVideo = asyncHandler(async (req, res) => {
               subscriberCount: { $size: "$subscribers" },
               isSubscribed: {
                 $cond: {
-                  if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                  if: { $in: [(userId == 'null' || userId==':userId')? userId:new mongoose.Types.ObjectId(`${userId}`),"$subscribers.subscriber"] },
                   then: true,
                   else: false,
                 },
@@ -508,14 +517,14 @@ const getVideo = asyncHandler(async (req, res) => {
         numberofdislike: { $size: "$disliked" },
         isLiked: {
           $cond: {
-            if: { $in: [req.user?._id, "$liked.likedBy"] },
+            if: { $in: [(userId == 'null' || userId==':userId')? userId : new mongoose.Types.ObjectId(`${userId}`), "$liked.likedBy"] },
             then: true,
             else: false,
           },
         },
         isDisliked: {
           $cond: {
-            if: { $in: [req.user?._id, "$disliked.dislikedBy"] },
+            if: { $in: [(userId == 'null' || userId==':userId')? userId : new mongoose.Types.ObjectId(`${userId}`), "$disliked.dislikedBy"] },
             then: true,
             else: false,
           },
@@ -531,11 +540,15 @@ const getVideo = asyncHandler(async (req, res) => {
         duration: 1,
         views: 1,
         isPublished: 1,
+        videoFileMpeg: 1,
         numberoflikes: 1,
         numberofdislike: 1,
         isLiked: 1,
         isDisliked: 1,
+        createdAt: 1,
         videoOwner: {
+          _id: 1,
+          userName: 1,
           fullName: 1,
           avatar: 1,
           subscriberCount: 1,
@@ -551,9 +564,12 @@ const getVideo = asyncHandler(async (req, res) => {
 
   // Add video to watch history of user if user is logged in
   if (userId && isValidObjectId(userId)) {
-    await User.findByIdAndUpdate(userId, {
-      $push: { watchHistory: videoId, $position: 0 },
-    });
+    const user = await User.findById(userId);
+    if (user && !user.watchHistory.includes(videoId)) {
+      await User.findByIdAndUpdate(userId, {
+        $push: { watchHistory: { $each: [videoId], $position: 0 } },
+      });
+    }
   }
 
   return res
@@ -664,7 +680,7 @@ const toggleVideoStatus = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, video, "Video status toggled successfully"));
+    .json(new ApiResponse(200, video, `Video ${video.isPublished ? "published" : "unpublished"} successfully`));
 });
 
 const updateVideoThumbnail = asyncHandler(async (req, res) => {
@@ -697,7 +713,7 @@ const updateVideoThumbnail = asyncHandler(async (req, res) => {
     throw new ApiErrors(404, "Video not found");
   }
 
-  const thumbnailUpload = await uploadTOCloudinary(thumbnail, "video");
+  const thumbnailUpload = await uploadTOCloudinary(thumbnail, "video","image");
 
   if (!thumbnailUpload) {
     unlinkPath(null, thumbnail);
@@ -747,6 +763,47 @@ const incrementViewCount = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, video, "View count incremented successfully"));
 });
 
+const searchVideoTitles = asyncHandler(async (req, res) => {
+  const { query } = req.query;
+  if (!query || query.trim() === "") {
+    throw new ApiErrors(400, "Please provide a search query");
+  }
+
+  const pipeline = [
+    {
+      $search: {
+        index: "default",
+        text: {
+          query: query,
+          path: ["title", "description"],
+          fuzzy: {
+            maxEdits: 2,
+            prefixLength: 3,
+          },
+        },
+      },
+    },
+    {
+      $match: {
+        isPublished: true,
+      },
+    },
+    {
+      $project: {
+        title: 1,
+      },
+    },
+  ];
+
+  const videoTitles = await Video.aggregate(pipeline);
+
+  if (videoTitles.length === 0) {
+    return res.status(404).json(new ApiResponse(404, [], "No videos found"));
+  }
+
+  return res.status(200).json(new ApiResponse(200, videoTitles, "Titles fetched successfully"));
+});
+
 export {
   getVideos,
   getVideo,
@@ -757,4 +814,5 @@ export {
   updateVideoThumbnail,
   incrementViewCount,
   getUserVideos,
+  searchVideoTitles
 };

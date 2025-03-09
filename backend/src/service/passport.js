@@ -52,23 +52,25 @@ passport.use(
             });
           }
         }
-
+        
         const { accessToken, refreshToken } =
           await generateAccessTokenAndRefreshToken(isuser._id);
 
         const user = await User.findById(isuser._id).select(
-          "-password -refreshToken"
+        "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory -twoFactorBackupCodes"
         );
 
         if (!user) {
           return done(new ApiErrors(404, "User not found"), false);
         }
+
         const options = {
-          httpOnly: true,
-          secure: true,
-          sameSite: "Strict",
+          httpOnly: true, 
+          secure: true, 
+          sameSite: "None",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
         };
-        return done(null, user, { accessToken, refreshToken, options });
+        return done(null,user, { accessToken, refreshToken, options });
       } catch (error) {
         done(error, false);
       }
@@ -132,19 +134,21 @@ passport.use(
         const { accessToken, refreshToken } =
           await generateAccessTokenAndRefreshToken(isuser._id);
         const user = await User.findById(isuser._id).select(
-          "-password -refreshToken"
+          "-password -refreshToken -verifyToken -verifyTokenExpires -lastUsernameChange -createdAt -updatedAt -__v -githubId -googleId -watchHistory -twoFactorBackupCodes"
         );
         if (!user) {
           return done(new ApiErrors(404, "User not found"), false);
         }
 
+
         const options = {
-          httpOnly: true,
-          secure: true,
-          sameSite: "Strict",
+          httpOnly: true, 
+          secure: true, 
+          sameSite: "None",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
         };
 
-        return done(null, user, { accessToken, refreshToken, options });
+        return done(null,user,{accessToken, refreshToken, options });
       } catch (error) {
         done(error, false);
       }

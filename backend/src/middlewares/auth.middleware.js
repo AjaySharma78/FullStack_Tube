@@ -4,29 +4,24 @@ import { ApiErrors } from "../utils/apiError.js";
 import config from "../env/config.js";
 import { User } from "../models/user.model.js";
 
-export const verifyUser = asyncHandler(async (req, _, next) => {
+export const verifyUser = asyncHandler(async (req, res, next) => {
+  const accessToken = req.cookies?.accessToken || req.headers["authorization"]?.split(" ")[1];
+ 
+  if (!accessToken) {
+    throw ApiErrors.unauthorized("You are not authenticated");
+  }
+
   try {
-    const accessToken =
-      req.cookies?.accessToken || req.headers("Authorization")?.split(" ")[1];
-
-    if (!accessToken) {
-      throw new ApiErrors(401, "You are not authenticated");
-    }
-
-    const decodedToken = await jwt.verify(
-      accessToken,
-      config.accessTokenSecret
-    );
-    const user = await User.findById(decodedToken?._id).select(
-      "-password -refreshToken"
-    );
+    const decodedToken = jwt.verify(accessToken, config.accessTokenSecret);
+    const user = await User.findById(decodedToken?._id).select("-password -refreshToken");
 
     if (!user) {
-      throw new ApiErrors(401, "You are not authenticated or user not");
+      throw ApiErrors.unauthorized("Invalid token");
     }
+
     req.user = user;
     next();
   } catch (error) {
-    throw new ApiErrors(401, "You are not authenticated or token is expired");
+    throw ApiErrors.unauthorized("Invalid token");
   }
 });

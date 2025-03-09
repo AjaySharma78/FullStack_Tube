@@ -143,14 +143,22 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
       );
     }
     const video = await Video.findById(videoId);
-
+    
     if (!video) {
       throw new ApiErrors(404, "Video not found");
+    }
+
+    if(!video.isPublished) {
+      throw new ApiErrors(400, "Video is not published");
     }
 
     if (!playlist.video.includes(videoId)) {
       playlist.video.push(videoId);
       await playlist.save();
+    }else{
+      return res
+      .status(400)
+      .json(new ApiResponse(400, null, "Video already added to playlist"));
     }
   }
 
@@ -226,7 +234,8 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         playlistInfo[0],
-        "Video added to playlist successfully"
+        playlistId ? "Video added to playlist successfully" :
+        "Playlist created and video added successfully"
       )
     );
 });
@@ -377,6 +386,24 @@ const removeAllVideoFromPlaylist = asyncHandler(async (req, res) => {
     );
 });
 
+const deletePlaylist = asyncHandler(async (req, res) => {
+  const { playlistId } = req.params;
+
+  if (!playlistId) {
+    throw new ApiErrors(400, "PlaylistId is required");
+  }
+
+  const playlist = await Playlist.findByIdAndDelete(playlistId);
+
+  if (!playlist) {
+    throw new ApiErrors(404, "Playlist not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, playlist, "Playlist deleted successfully"));
+})
+
 const getUserPlaylist = asyncHandler(async (req, res) => {
   const { userId } = req.params;
 
@@ -395,7 +422,7 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
         from: "videos",
         localField: "video",
         foreignField: "_id",
-        as: "video",
+        as: "playlistVideos",
       },
     },
     {
@@ -407,8 +434,11 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
       },
     },
     {
+      $unwind: "$playlistOwner",
+    },
+    {
       $addFields: {
-        numberOfVideos: { $size: "$video" },
+        numberOfVideos: { $size: "$playlistVideos" },
       },
     },
     {
@@ -417,9 +447,11 @@ const getUserPlaylist = asyncHandler(async (req, res) => {
         name: 1,
         description: 1,
         numberOfVideos: 1,
+        playlistVideos: 1,
         playlistOwner: {
           userName: 1,
           fullName: 1,
+          _id: 1,
         },
         createdAt: 1,
         updatedAt: 1,
@@ -442,4 +474,5 @@ export {
   removeVideoFromPlaylist,
   removeAllVideoFromPlaylist,
   getUserPlaylist,
+  deletePlaylist
 };

@@ -12,7 +12,7 @@ const router = Router();
 router.use(verifyUser);
 
 router.route("/toggle/v/:videoId").patch(toggleVideoLike);
-router.route("/toggle/c/:commentId").patch(toggleVideoCommentLike);
+router.route("/toggle/v/c/:commentId").patch(toggleVideoCommentLike);
 router.route("/toggle/t/c/:commentId").patch(toggleTweetCommentLike);
 router.route("/toggle/t/:tweetId").patch(toggleTweetLike);
 router.route("/videos").get(getLikedVideos);
