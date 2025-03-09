@@ -8,5 +8,5 @@ export const initSocket = async () => {
         timeout: 10000,
         transports: ['websocket'],
     };
-    return io(config.backendEndpoint, options);
+    return io(config.socketEndpoint, options);
 };

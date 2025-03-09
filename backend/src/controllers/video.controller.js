@@ -29,7 +29,7 @@ const createVideo = asyncHandler(async (req, res) => {
   
   const thumbnail = req.files?.thumbnail[0].path;
   const video = req.files?.video[0].path;
-  console.log(thumbnail, video);
+ 
   if (!title || !description || !isPublished) {
     unlinkPath(video, thumbnail);
     throw new ApiErrors(400, "Please provide title, description and isPublished");
