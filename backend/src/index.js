@@ -1,5 +1,5 @@
 import mongoConnection from "./db/config.js";
-import { app, server, io } from "./app.js";
+import { server, io } from "./app.js";
 import config from "./env/config.js";
 import ACTIONS from "./Actions.js";
 
@@ -19,12 +19,9 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(config.socketPort, () => {
-  console.log("socket Server running on port " + config.socketPort);
+server.listen(config.port, () => {
+  console.log(" Server running on port " + config.socketPort);
 });
- 
-app.listen(config.port, () => {
-  console.log("Server running on port " + config.port);
-});
+
 
 export { io };
