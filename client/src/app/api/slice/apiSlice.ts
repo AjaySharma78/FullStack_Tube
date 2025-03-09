@@ -4,21 +4,17 @@ import store from '../../store/store.ts';
 import {setupCache} from 'axios-cache-interceptor'
 import config from '../../../env/config.ts';
 
-const instance = axios.create({
-    baseURL: config.backendEndpoint,
-    withCredentials: true,
-<<<<<<< HEAD
-
-=======
->>>>>>> 373c80d80295f7f7e0d1af93562d8ee4e413c75c
-});
-const api = setupCache(instance);
-
-
-// const api = axios.create({
-//     baseURL: 'http://localhost:8000/api/v1',
+// const instance = axios.create({
+//     baseURL: config.backendEndpoint,
 //     withCredentials: true,
 // });
+// const api = setupCache(instance);
+
+
+const api = axios.create({
+    baseURL: 'http://localhost:8000/api/v1',
+    withCredentials: true,
+});
 
 // // api.interceptors.request.use(
 // //     config => {
