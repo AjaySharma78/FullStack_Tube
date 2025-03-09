@@ -20,7 +20,7 @@ io.on('connection', (socket) => {
 });
 
 server.listen(config.port, () => {
-  console.log(" Server running on port " + config.socketPort);
+  console.log(" Server running on port " + config.port);
 });
 
 
