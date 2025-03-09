@@ -5,6 +5,8 @@ import config from "./env/config.js";
 import passport from "./service/passport.js";
 import session from "express-session";
 import helmate from "helmet";
+import { Server } from "socket.io";
+import http from "http";
 
 const app = express();
 app.use(helmate());
@@ -14,6 +16,15 @@ app.use(
     credentials: true,
   })
 );
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
+
 
 app.use(
   session({
