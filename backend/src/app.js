@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser";
 import config from "./env/config.js";
 import passport from "./service/passport.js";
 import session from "express-session";
-import helmate from "helmet";
 import http from "http";
 import { Server } from "socket.io";
 
@@ -12,15 +11,14 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: config.clientUrl,
+    origin: 'http://localhost:5173',
     credentials: true,
   },
 });
 
-app.use(helmate());
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
