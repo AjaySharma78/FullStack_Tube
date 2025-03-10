@@ -45,14 +45,14 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use(express.static("public"));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
+// app.use((req, res, next) => {
+//   res.header("Access-Control-Allow-Origin");
+//   res.header(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content-Type, Accept"
+//   );
+//   next();
+// });
 import userRouter from "./routes/user.route.js";
 import videoRouter from "./routes/video.route.js";
 import likeRouter from "./routes/likes.route.js";
