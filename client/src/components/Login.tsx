@@ -176,6 +176,23 @@ function Login() {
                   value: true,
                   message: "Password is required",
                 },
+                validate: {
+                  hasNumber: (value) =>
+                    /\d/.test(value) ||
+                    "Password must contain at least one number",
+                  hasLetter: (value) =>
+                    /[a-zA-Z]/.test(value) ||
+                    "Password must contain at least one letter",
+                  hasUpperCase: (value) =>
+                    /[A-Z]/.test(value) ||
+                    "Password must contain at least one uppercase letter",
+                  hasLowerCase: (value) =>
+                    /[a-z]/.test(value) ||
+                    "Password must contain at least one lowercase letter",
+                  hasSpecialChar: (value) =>
+                    /[!@#$%^&*(),.?":{}|<>]/.test(value) ||
+                    "Password must contain at least one special character",
+                },
               })}
             />
             <Link 

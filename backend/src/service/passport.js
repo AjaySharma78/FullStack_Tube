@@ -44,9 +44,9 @@ passport.use(
               userName,
               email: profile.emails[0].value,
               isEmailVerified: true,
-              avatar: profile.photos[0].value,
+              avatar: profile.photos[0].value.replace(/=s\d+-c$/, "=s800-c"),
               fullName: profile.displayName,
-              coverImage: profile.photos[0].value || "",
+              coverImage: profile.photos[0].value.replace(/=s\d+-c$/, "=s800-c") || "",
               password: profile.id,
               lastUsernameChange: new Date(),
             });
@@ -121,8 +121,8 @@ passport.use(
             isuser = await User.create({
               githubId: profile.id,
               fullName: profile.displayName,
-              avatar: profile.photos[0].value,
-              coverImage: profile.photos[0].value || "",
+              avatar: profile.photos[0].value.replace(/=s\d+-c$/, "=s1020-c"),
+              coverImage: profile.photos[0].value.replace(/=s\d+-c$/, "=s1020-c") || "",
               userName,
               email: profile.emails[0].value,
               password: profile.id,

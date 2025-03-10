@@ -112,7 +112,7 @@ const UserProfile = () => {
   return (
     <div className="w-full h-full overflow-y-auto ">
       <div className="mx-2 md:mx-5 mt-2 md:mt-5">
-        <div className="w-full md:h-52 ">
+        <div className="w-full h-44 md:h-52 ">
           {userProfile?.coverImage ? (
             <img
               src={userProfile?.coverImage}

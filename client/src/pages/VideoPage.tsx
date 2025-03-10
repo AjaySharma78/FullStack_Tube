@@ -198,8 +198,7 @@ function VideoPage() {
           backward: 30,
           forward: 10,
         },
-        pictureInPictureToggle: true,
-        volumePanel: {
+      volumePanel: {
           inline: false,
         },
       },
@@ -258,6 +257,12 @@ function VideoPage() {
     document.addEventListener("keydown", handleArrowKeys);
     document.addEventListener("keydown", handleSpaceBar);
     document.addEventListener("keydown", handleMute);
+
+    return () => {
+      document.removeEventListener("keydown", handleArrowKeys);
+      document.removeEventListener("keydown", handleSpaceBar);
+      document.removeEventListener("keydown", handleMute);
+    };
 
   }, []);
   const toggleMenu = (playlistId: string) => {

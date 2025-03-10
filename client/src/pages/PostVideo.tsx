@@ -20,34 +20,26 @@ const MAX_VIDEO_SIZE = 95 * 1024 * 1024;
 const MAX_VIDEO_DURATION = 25 * 60; 
 
 const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const videos = useSelector((state: any) => state.video.videos);
   const user = useSelector((state: any) => state.auth.user);
   const socketRef = useRef<typeof Socket | null>(null);
   const [isLoading, setLoading] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState,
-    watch,
-    control,
-    getValues,
-  } = useForm<VideoUploadInterface>({
-    defaultValues: {
-      title: post?.title || "",
-      description: post?.description || "",
-      thumbnail: post?.thumbnail || "",
-      video: post?.videoFile || "",
-    },
-  });
+  const { register, handleSubmit, formState, watch, control, getValues } =
+    useForm<VideoUploadInterface>({
+      defaultValues: {
+        title: post?.title || "",
+        description: post?.description || "",
+        thumbnail: post?.thumbnail || "",
+        video: post?.videoFile || "",
+      },
+    });
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [compressProgress, setCompressProgress] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const thumbnail = watch("thumbnail");
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { errors } = formState;
-  const video = watch("video");
 
   useEffect(() => {
     const init = async () => {
@@ -74,33 +66,29 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
     };
   }, []);
 
-
-
   const create: SubmitHandler<VideoUploadInterface> = async (data) => {
-
     toast.promise(
       new Promise<string>(async (resolve, reject) => {
         try {
           if (post) {
+            setLoading(true);
+            resolve("Video updated successfully");
             const response = await updateVideoTitleDescription(post._id, data);
-            navigate(
-              `/videos/${response.data._id}/${user ? user._id : "null"}/${
-                user ? "null" : "null"
-              }`
-            );
+            const encryptedVideoId = encryptData(response.data._id);
+            const encryptedUserId = encryptData(user ? user._id : null);
+            const encryptedPlaylistOwnerId = encryptData(null);
+            navigate(`/videos/${encryptedVideoId}/${encryptedUserId}/${encryptedPlaylistOwnerId}}`);
           } else {
             setLoading(true);
             const response = await uploadVideo(data);
             if (!response.success) toast.error(response.message);
-            if (response.message === "Video uploaded successfully") {
+            if (response.success) {
               resolve("Video uploaded successfully");
               dispatch(setVideos([...videos, response.data]));
               const encryptedVideoId = encryptData(response.data._id);
               const encryptedUserId = encryptData(user ? user._id : null);
               const encryptedPlaylistOwnerId = encryptData(null);
-              navigate(
-                `/videos/${encryptedVideoId}/${encryptedUserId}/${encryptedPlaylistOwnerId}`
-              );
+              navigate(`/videos/${encryptedVideoId}/${encryptedUserId}/${encryptedPlaylistOwnerId}`);
             }
           }
         } catch (error: any) {
@@ -119,6 +107,8 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
     );
   };
 
+  const thumbnail = watch("thumbnail");
+  const video = watch("video");
   useEffect(() => {
     if (thumbnail && thumbnail.length > 0) {
       if (post) {
@@ -141,7 +131,6 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
       }
     }
   }, [video]);
-
 
   return (
     <div
@@ -259,6 +248,7 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
                       message: "Thumbnail is required",
                     },
                     validate: async (fileList) => {
+                      if (post) return true;
                       if (!fileList.length) return "Cover image is required.";
                       const file = fileList[0] as unknown as File;
 
@@ -267,9 +257,10 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
                       }
 
                       if (
-                        !file.type.includes("image/png") &&
-                        !file.type.includes("image/jpeg") &&
-                        !file.type.includes("image/jpg")
+                        !file.type ||
+                        (!file.type.includes("image/png") &&
+                          !file.type.includes("image/jpeg") &&
+                          !file.type.includes("image/jpg"))
                       ) {
                         return "Invalid image format";
                       }
@@ -277,26 +268,7 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
                     },
                   })}
                 />
-                <div className="flex gap-2">
-                  {thumbnailPreview && (
-                    <div className="mt-2 w-[28%]">
-                      <img
-                        src={thumbnailPreview}
-                        alt="Thumbnail Preview"
-                        className="w-full h-full rounded-md object-cover"
-                      />
-                    </div>
-                  )}
-                  {videoPreview && (
-                    <div className="mt-2 w-[72%]">
-                      <video
-                        src={videoPreview}
-                        controls
-                        className="w-full h-full rounded-md "
-                      />
-                    </div>
-                  )}
-                </div>
+               
                 <Input
                   className="py-2 text-sm w-full"
                   label="Select Video: "
@@ -310,16 +282,18 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
                       message: "Video is required",
                     },
                     validate: async (fileList) => {
+                      if (post) return true;
                       if (!fileList.length) return "Video is required.";
                       const file = fileList[0] as unknown as File;
 
-                     if (file.size > MAX_VIDEO_SIZE) {
+                      if (file.size > MAX_VIDEO_SIZE) {
                         return "File size must be less than 95MB.";
                       }
                       if (
-                        !file.type.includes("video/mp4") &&
-                        !file.type.includes("video/mkv") &&
-                        !file.type.includes("video/avi")
+                        !file.type ||
+                        (!file.type.includes("video/mp4") &&
+                          !file.type.includes("video/mkv") &&
+                          !file.type.includes("video/avi"))
                       ) {
                         return "Invalid video format";
                       }
@@ -341,11 +315,22 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
                         }
                       );
 
-                   
                       if (videoDuration > MAX_VIDEO_DURATION) {
                         return "Video duration must be less than 25 minutes.";
                       }
-                      
+
+                      const videoElement = document.createElement("video");
+                      videoElement.src = URL.createObjectURL(file);
+                      const isLandscape = await new Promise<boolean>((resolve) => {
+                        videoElement.onloadedmetadata = () => {
+                          resolve(videoElement.videoWidth > videoElement.videoHeight);
+                        };
+                      });
+
+                      if (!isLandscape) {
+                        return "Only landscape videos are allowed.";
+                      }
+
                       return true;
                     },
                   })}
@@ -364,6 +349,26 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
                     </select>
                   </div>
                 )}
+                 <div className="flex gap-2 h-52 w-full">
+                  {thumbnailPreview && (
+                    <div className="mt-2 w-[28%]">
+                      <img
+                        src={thumbnailPreview}
+                        alt="Thumbnail Preview"
+                        className="w-full h-full rounded-md object-cover"
+                      />
+                    </div>
+                  )}
+                  {videoPreview && (
+                    <div className="mt-2 w-[72%]">
+                      <video
+                        src={videoPreview}
+                        controls
+                        className="w-full h-full rounded-md "
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -373,7 +378,9 @@ const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
               isLoading ? "cursor-default" : "cursor-pointer"
             } w-full mt-2 rounded-md dark:hover:text-white`}
             bgColor={`${
-              isLoading ? "bg-purple-200 dark:bg-zinc-400" : "hover:bg-purple-500 bg-purple-400 dark:bg-black dark:hover:bg-zinc-800"
+              isLoading
+                ? "bg-purple-200 dark:bg-zinc-400"
+                : "hover:bg-purple-500 bg-purple-400 dark:bg-black dark:hover:bg-zinc-800"
             } `}
             disabled={isLoading}
           >

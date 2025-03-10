@@ -79,7 +79,7 @@ const Profile = () => {
         />
       )}
       <div className="mx-2 md:mx-14 mt-2 md:mt-5">
-        <div className="relative w-full md:h-52 rounded-xl dark:ring-1 dark:ring-zinc-600">
+        <div className="relative w-full h-44 md:h-52 rounded-xl dark:ring-1 dark:ring-zinc-600">
           <div
             onClick={() => {
               handleUpdateThumbnail(`${user?._id}`);
@@ -93,7 +93,7 @@ const Profile = () => {
             <img
               src={user?.coverImage}
               alt="cover"
-              className="w-full h-full rounded-xl"
+              className="w-full h-full object-fill rounded-xl"
             />
           ) : (
             <div

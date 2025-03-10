@@ -72,16 +72,25 @@ function Navbar({ menuClicked, authStatus, user }: MenuProps) {
   //   const newTweetEnabledState = !local;
   //   dispatch(setTweetEnabled(newTweetEnabledState));
   // };
-  
+  const handleThemeToggle = () => {
+    if (theme === "dark") {
+      dispatch(lightTheme());
+    } else if (theme === "light") {
+      dispatch(systemTheme());
+    } else {
+      dispatch(darkTheme());
+    }
+  };
+
   const handleBlur = () => {
     setTimeout(() => {
       setIsInputActive(false);
+      setSuggestions([]);
     }, 200);
   };
-  
-  setTimeout(() => {
-    setSuggestions([]);
-  }, 10000);
+
+
+
 
   return (
     <div className="flex justify-between  items-center py-2 px-4 bg-gray-200 dark:bg-black dark:border-b dark:border-zinc-500 ">
@@ -105,8 +114,8 @@ function Navbar({ menuClicked, authStatus, user }: MenuProps) {
         </Link>
       </div>
       {/*  */}
-      <div className={` ${isInputActive ? "w-full md:w-1/3" : "w-1/3 "} relative lg:left-36`}>
-        <div className={`w-full flex items-center gap-2 text-xs md:rounded-full border-b md:ring-[1px] ring-gray-400 md:px-2 text-gray-900`}>
+      <div className={` ${isInputActive ? "w-full md:w-1/3" : "w-1/3 "} relative lg:left-32`}>
+        <div className={`w-full flex items-center gap-2 text-xs md:rounded-full md:ring-[1px] ring-gray-400 md:px-2 text-gray-900`}>
           <form className="w-full flex items-center md:gap-2" onSubmit={handleFormSubmit}>
             <img src={search} alt="search" className="w-5 h-5"/>
           <input
@@ -116,9 +125,9 @@ function Navbar({ menuClicked, authStatus, user }: MenuProps) {
               onFocus={() => setIsInputActive(true)}
               onBlur={handleBlur}
               onChange={(event) => debounced(event.target.value)}
-              className=" p-2 bg-transparent outline-none dark:text-white"
+              className="w-full p-2 bg-transparent outline-none dark:text-white"
             />
-          </form>
+          </form> 
         {suggestions && suggestions.length > 0 && value !== '' && (
             <ul className={`${isInputActive ? " " : "hidden md:block"} absolute top-11 lg:top-full bg-white dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-600 border border-gray-300 rounded-md mt-1 z-50`}>
               {suggestions.map((suggestion) => (
@@ -146,35 +155,15 @@ function Navbar({ menuClicked, authStatus, user }: MenuProps) {
               Coming Soon Tweet...
             </div>
           </div>
-          <div className={`dark:text-zinc-300 ${isInputActive ? "hidden md:block" : "block"}`}>
-            {theme === "light" ? (
-              <button
-              onClick={() => dispatch(lightTheme())}
-              className={`lg:px-3 lg:py-2 text-sm rounded-full flex items-center gap-1 dark:bg-black  ${
-                theme === "light" ? "bg-transparent lg:bg-gray-300 " : "bg-transparent lg:bg-white"
+          <div className={`dark:text-zinc-300 ${isInputActive ? "hidden md:block" : "block"}` }>
+            <button
+              onClick={handleThemeToggle}
+              className={`md:px-3 md:py-2 text-sm rounded-full flex items-center gap-1 dark:bg-black ${
+                theme === "light" ? "bg-transparent md:bg-gray-300 " : theme === "dark" ? "bg-transparent md:bg-white md:dark:bg-zinc-700" : "bg-transparent md:bg-gray-300 md:dark:bg-purple-800"
               }`}
             >
-              ☀️ <span className="hidden lg:block">Light</span>
+               <span>{theme === "light" ? "☀️" : theme === "dark" ? "🌙" : "🖥️"}</span><span className="hidden md:block">{theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}</span>
             </button>
-            ) : theme === "dark" ? (
-              <button
-              onClick={() => dispatch(darkTheme())}
-              className={`lg:px-3 lg:py-2 text-sm rounded-full flex items-center gap-1 dark:bg-black ${
-                theme === "system" ? "bg-transparent lg:bg-gray-300 lg:dark:bg-purple-800 " : "bg-transparent lg:bg-white"
-              }`}
-            >
-              🌙 <span className="hidden lg:block">Dark</span>
-            </button>
-            ) : (
-              <button
-              onClick={() => dispatch(systemTheme())}
-              className={`lg:px-3 lg:py-2 text-sm rounded-full flex items-center gap-1 dark:bg-black ${
-                theme === "system" ? "bg-transparent lg:bg-gray-300 lg:dark:bg-purple-800 " : "bg-transparent lg:bg-white"
-              }`}
-            >
-              🖥️ <span className="hidden lg:block">System</span>
-            </button>
-            )}
           </div>
         </div>
         {authStatus && (

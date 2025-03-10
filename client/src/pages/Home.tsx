@@ -78,24 +78,31 @@ const Home = () => {
     <div className="w-full h-screen overflow-y-auto ">
       <div className="w-full">
       {isLoading ? (
-         <HomeSkeleton />
+          <HomeSkeleton />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 w-full">
-            {Video.map((video) => (
-              <VideoCard
-                playList={playList}
-                video={video}
-                key={video._id}
-                user={user}
-                toggleMenu={() => toggleMenu(video._id)}
-                togglePlaylistMenu={() => togglePlaylistMenu(video._id)}
-                menuVisible={menuVisible}
-                playlistMenuVisible={playlistMenuVisible}
-                handleAddToPlaylist={(playListId: string) =>
-                  handleAddToPlaylist(playListId, video._id)
-                }
-              />
-            ))}
+            {Video.length === 0 ? (
+              <div className="text-center col-span-3 h-screen mt-10 dark:text-white">
+              <h2 className="text-2xl font-semibold">No Video Found</h2>
+              <p className="text-gray-600">Users has not posted videos yet.</p>
+            </div>
+            ) : (
+              Video.map((video) => (
+                <VideoCard
+                  playList={playList}
+                  video={video}
+                  key={video._id}
+                  user={user}
+                  toggleMenu={() => toggleMenu(video._id)}
+                  togglePlaylistMenu={() => togglePlaylistMenu(video._id)}
+                  menuVisible={menuVisible}
+                  playlistMenuVisible={playlistMenuVisible}
+                  handleAddToPlaylist={(playListId: string) =>
+                    handleAddToPlaylist(playListId, video._id)
+                  }
+                />
+              ))
+            )}
           </div>
         )}
       </div>

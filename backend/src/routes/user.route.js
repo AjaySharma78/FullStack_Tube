@@ -20,7 +20,8 @@ import {
   userNameValidation,
   generate2FASecret,
   verify2FAToken,
-  disable2FA
+  disable2FA,
+  deleteWatchHistory
 } from "../controllers/user.controller.js";
 import passport from "passport";
 import { Router } from "express";
@@ -51,6 +52,7 @@ router.route("/logout").post(verifyUser, logoutUser);
 router.route("/watch-history").get(verifyUser, getWatchHistory);
 router.route("/change-password").post(verifyUser, changePassword);
 router.route("/get-current-user").get(verifyUser, getCurrentUser);
+router.route("/delete-watch-history").delete(verifyUser, deleteWatchHistory);
 router
   .route("/update/u/email-username-fullname")
   .patch(verifyUser, updateUserEmailUsername);

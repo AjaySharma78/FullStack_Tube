@@ -15,6 +15,7 @@ export const VideoPlayer = ({ options, onReady }: VideoPlayerProps) => {
     if (!playerRef.current) {
       const videoElement = document.createElement("video-js");
       videoElement.classList.add("vjs-big-play-centered");
+      videoElement.classList.add("vjs-16-9");
       videoElement.style.borderRadius = "8px";
       videoRef.current.innerHTML = "";
       videoRef.current.appendChild(videoElement);
@@ -42,10 +43,11 @@ export const VideoPlayer = ({ options, onReady }: VideoPlayerProps) => {
   }, [playerRef]);
 
   return (
-    <div data-vjs-player className="w-full h-full rounded-md">
+    <div data-vjs-player className=" w-full h-full rounded-md">
       <div ref={videoRef} className="rounded-md"></div>
     </div>
   );
 };
 
 export default VideoPlayer;
+

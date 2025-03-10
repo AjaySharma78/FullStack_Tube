@@ -1,10 +1,35 @@
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../app/store/store";
 import { darkTheme, lightTheme, systemTheme } from "../app/api/slice/authSlice";
+import { toast } from "sonner";
+import { deleteWatchHistory } from "../app/api/videoApi";
 
 const Setting = () => {
   const dispatch = useDispatch();
   const theme = useSelector((state: RootState) => state.auth.theme);
+  const authStatus = useSelector((state: RootState) => state.auth.status);
+  const clearHistory = () => {
+    console.log("Clearing history")
+    toast.promise<string>(
+      new Promise<string>(async(resolve, reject) => {
+        try {
+          const response = await deleteWatchHistory()
+          console.log(response)
+          if(!response.success) {
+            reject(response.message)
+          }
+          resolve(response.message)
+        } catch (error) {
+          reject("Failed to clear history")
+        }
+      }),
+      {
+        loading: "Clearing history...",
+        success: (message: string) => message,
+        error: (message: string) => message
+      }
+    )
+  }
   return (
     <div className="w-full h-screen p-5">
       <div className="flex justify-between items-center">
@@ -73,6 +98,16 @@ const Setting = () => {
                 </div>
               </td>
             </tr>
+           {authStatus && <tr>
+              <td className="py-2 px-4 text-xs md:text-sm lg:text-base ">
+                Clear WatchHistory
+              </td>
+              <td className="py-2 text-right pr-12" rowSpan={2}>
+                <button className="p-1 lg:px-2 rounded-full bg-gray-100 dark:bg-black" onClick={clearHistory}>
+                  Clear History
+                </button>
+              </td>
+              </tr>}
           </tbody>
         </table>
       </div>

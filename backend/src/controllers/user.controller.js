@@ -984,6 +984,33 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+const deleteWatchHistory = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+  const userHistory = req.user;
+  if (!userId) {
+    throw ApiErrors.badRequest("Invalid user id");
+  }
+  
+  if(userHistory.watchHistory.length === 0) {
+    throw ApiErrors.badRequest("User watch history is empty");
+  }
+  
+  const user = await User.findByIdAndUpdate(userId, {
+    $set: {
+      watchHistory: [],
+    },
+  })
+
+  if (!user) {
+    throw ApiErrors.notFound("User not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User watch history deleted successfully"));
+});
+
+
 const userNameValidation = asyncHandler(async (req, res) => {
   const { userName } = req.body;
   if (!userName) {
@@ -1200,4 +1227,5 @@ export {
   generate2FASecret,
   verify2FAToken,
   disable2FA,
+  deleteWatchHistory
 };

@@ -126,3 +126,12 @@ export const searchVideo = async (searchQuery:string) => {
         return error.response.data;
     }
 }
+
+export const deleteWatchHistory = async () => {
+    try {
+        const response = await api.delete(`/users/delete-watch-history`);
+        return response.data;
+    } catch (error:any) {
+        return error.response.data;
+    }
+}
