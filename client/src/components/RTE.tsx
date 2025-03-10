@@ -42,6 +42,7 @@ const RTE = React.forwardRef<HTMLInputElement, RTEProps>(
                 height: 300,
                 highlight_on_focus: false,
                 branding: false,
+                paste_as_text: true,
                 menubar: true,
                 plugins: [
                   "nonbreaking",
