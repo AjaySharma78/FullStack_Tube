@@ -134,7 +134,7 @@ function Navbar({ menuClicked, authStatus, user }: MenuProps) {
                 <li
                   key={suggestion._id}
                   className="p-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 z-50"
-                  onClick={() => handleSuggestionClick(suggestion.title)}
+                  onMouseDown={() => handleSuggestionClick(suggestion.title)}
                 >
                   {suggestion.title}
                 </li>
