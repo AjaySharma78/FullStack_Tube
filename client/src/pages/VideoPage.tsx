@@ -222,6 +222,11 @@ function VideoPage() {
       videojs.log("player disposed");
     });
 
+    player.on("contextmenu", (e:Event) => {
+      e.preventDefault();
+    }
+    );
+
     const handleArrowKeys = (event: any) => {
       if (event.code === "ArrowRight") {
         event.preventDefault();
