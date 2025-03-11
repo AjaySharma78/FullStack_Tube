@@ -58,7 +58,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
             className="w-14 h-14 object-cover rounded-full"
           />
         </div>
-        <div className="w-[90%] flex items-center gap-2">
+        <div className="w-[80%] flex items-center gap-2">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
@@ -67,6 +67,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
           />
           <button
             type="button"
+            className="hidden md:block"
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           >
             <BsEmojiSmile />
@@ -75,11 +76,11 @@ const CommentForm: React.FC<CommentFormProps> = ({
             type="submit"
             className="p-2 text-white rounded-md"
             bgColor={`${
-              !newComment.trim() ? "md:bg-purple-400" : "bg-purple-500"
+              !newComment.trim() ? "md:bg-purple-400" : "md:bg-purple-500"
             }`}
             disabled={!newComment.trim()}
           >
-          {isSmallScreen ? <img src={Send} alt="img" className="w-5" /> : "Comment"}
+          {isSmallScreen ? <img src={Send} alt="img" className="w-6" /> : "Comment"}
           </Button>
         </div>
       </form>

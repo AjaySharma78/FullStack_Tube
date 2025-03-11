@@ -114,13 +114,13 @@ const CommentCard: React.FC<CommentProps> = ({
                   setEditingCommentText(comment.content);
                 }}
               >
-                <GrDocumentUpdate />
+                <GrDocumentUpdate className="w-4 h-4" />
               </button>
               <button
                 className={`flex items-center`}
                 onClick={() => handleCommentDelete(comment._id)}
               >
-                <MdDelete />
+                <MdDelete className="w-5 h-5"/>
               </button>
             </div>
           ) : (

@@ -102,8 +102,8 @@ const Setting = () => {
               <td className="py-2 px-4 text-xs md:text-sm lg:text-base ">
                 Clear WatchHistory
               </td>
-              <td className="py-2 text-right pr-12" rowSpan={2}>
-                <button className="p-1 lg:px-2 rounded-full bg-gray-100 dark:bg-black" onClick={clearHistory}>
+              <td className="py-2 text-center text-xs md:text-sm lg:text-base" rowSpan={2}>
+                <button className="p-1.5 rounded-full bg-gray-100 dark:bg-black" onClick={clearHistory}>
                   Clear History
                 </button>
               </td>

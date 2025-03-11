@@ -133,8 +133,8 @@ const PlayList = () => {
                 className="w-full h-48 flex items-center justify-center rounded-t-lg"
                 style={{ backgroundColor: getRandomColor(playList._id) }}
               >
-                <span className="text-7xl font-bold text-white dark:text-zinc-400">
-                  {playList.name.charAt(0).toUpperCase()}
+                <span className="text-7xl font-bold text-white">
+                  {playList.name.charAt(0).toLocaleUpperCase()}
                 </span>
               </div>
             )}

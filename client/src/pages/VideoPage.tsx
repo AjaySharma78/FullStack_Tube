@@ -643,6 +643,14 @@ function VideoPage() {
     )
   };
 
+  const [showAllComments, setShowAllComments] = useState(false);
+
+  const toggleComments = () => {
+    setShowAllComments(!showAllComments);
+  };
+
+  const commentsToShow = showAllComments ? comments : comments?.slice(0, 1);
+
   if (isLoading) {
     return (<VideoPageSkeleton />);
   }
@@ -663,8 +671,8 @@ function VideoPage() {
               {videoInfo ? truncateTitle(videoInfo.title) : ""}
             </h1>
 
-            <div className="flex items-center flex-col md:flex-row mt-2 ">
-              <div className="flex items-center w-full justify-between md:justify-normal md:w-3/5">
+            <div className="flex items-center flex-col md:flex-row mt-2">
+              <div className=" flex items-center w-full justify-between md:justify-normal md:w-3/5">
                 <Link to={`/user/@${videoInfo?.videoOwner.userName}`}>
                   <img
                     src={videoInfo?.videoOwner.avatar}
@@ -693,13 +701,13 @@ function VideoPage() {
                     onClick={authStatus ? handleSubscribeClick : null}
                   >
                     {videoInfo?.videoOwner.isSubscribed ? (
-                      <div className="flex items-center">
-                        <IoMdNotificationsOutline className="mx-1" /> Subscribed
-                      </div>
-                    ) : (
-                      <div className="flex items-center">
-                        <IoMdNotificationsOff className="mx-1" /> Subscribe
-                      </div>
+                       <div className="flex items-center p-1">
+                       <IoMdNotificationsOutline className="mx-1" /> Subscribed
+                     </div>
+                   ) : (
+                     <div className="flex items-center p-1">
+                       <IoMdNotificationsOff className="mx-1" /> Subscribe
+                     </div>
                     )}
                   </Button>
                   {!authStatus && isHovered && (
@@ -719,7 +727,7 @@ function VideoPage() {
                   )}
                 </div>
               </div>
-              <div className="relative my-2 md:mt-0 flex items-center justify-between w-full md:w-2/5 dark:text-white">
+              <div className="border-t md:border-none relative my-2 md:mt-0 flex items-center justify-between w-full md:w-2/5 dark:text-white">
                 <div className="w-full flex md:space-x-4 text-sm md:text-base">
                   <div
                     className="flex items-center space-x-1 md:border border-black dark:border-white rounded-full px-3 py-1"
@@ -842,7 +850,7 @@ function VideoPage() {
             </div>
           </div>
 
-          <div className="md:m-2 md:p-2 rounded-md relative">
+          <div className="md:m-2 md:p-2 rounded-md relative" onClick={toggleComments}>
             <h1 className="px-1 md:px-2 text-xl font-bold">
               {comments?.length} Comments
             </h1>
@@ -859,7 +867,7 @@ function VideoPage() {
               />
             )}
             {comments &&
-              comments.map((comment) => (
+              commentsToShow?.map((comment) => (
                 <CommentCard
                   key={comment._id}
                   comment={comment}

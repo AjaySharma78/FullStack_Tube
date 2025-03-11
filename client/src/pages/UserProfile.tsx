@@ -7,7 +7,6 @@ import { Link, Outlet, useParams } from "react-router-dom";
 import { PlayListProps } from "../interface/playlistprops";
 import { toggleSubscribe } from "../app/api/subscribeApi";
 import { userPlaylist } from "../app/api/playListApis";
-import { encryptData } from "../utils/format";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import Button from "../components/Button";
@@ -85,7 +84,7 @@ const UserProfile = () => {
     },
     {
       name: "Playlist",
-      slug: `/user/${userName}/playlist/${encryptData(userProfile?._id)}`,
+      slug: `/user/${userName}/playlist`,
       active: true,
     },
   ];
@@ -159,15 +158,15 @@ const UserProfile = () => {
             </h3>
             <p className="mt-2 text-xs md:text-base ">Hey it's me {userProfile?.fullName}. </p>
             <Button
-              className="rounded-full mt-1 md:mt-8 text-xs"
+              className="rounded-full mt-1 md:mt-8 text-xs md:text-base"
               onClick={authStatus ? handleSubscribeClick : null}
             >
               {userProfile?.isSubscribed ? (
-                <div className="flex items-center px-1">
+                <div className="flex items-center p-1">
                   <IoMdNotificationsOutline className="mx-1" /> Subscribed
                 </div>
               ) : (
-                <div className="flex items-center px-1">
+                <div className="flex items-center p-1">
                   <IoMdNotificationsOff className="mx-1" /> Subscribe
                 </div>
               )}
@@ -185,9 +184,10 @@ const UserProfile = () => {
                     to={item.slug}
                     key={item.slug}
                     className={`${
-                      location.pathname === item.slug
-                        ? " text-black border-b-2 border-black dark:text-white"
-                        : ""
+                      decodeURIComponent(location.pathname) === decodeURIComponent(item.slug)
+                      ? "text-black border-b-2 border-black dark:border-white dark:text-white"
+                      : "text-gray-400 dark:text-zinc-400"
+                        
                     }`}
                   >
                     {item.name}

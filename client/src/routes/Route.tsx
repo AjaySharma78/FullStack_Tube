@@ -143,7 +143,7 @@ const router = createBrowserRouter([
             element: <VideoSection />,
           },
           {
-            path: "playlist/:userId",
+            path: "playlist",
             element: <PlayList />,
           },
           {
