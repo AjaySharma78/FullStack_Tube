@@ -98,7 +98,7 @@ function VideoPage() {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const storeVideos = useSelector(currentVideos);
-  const videoLink = videoInfo?.videoFileMpeg;
+  const videoLink = videoInfo?.videoFile;
   const playerRef = useRef<any>(null);
   const dispatch = useDispatch();
 
@@ -205,7 +205,9 @@ function VideoPage() {
       sources: [
         {
           src: videoLink,
-          type: "application/x-mpegURL",
+          // type: "application/x-mpegURL",
+          type: "video/mp4",
+
         },
       ],
     }),

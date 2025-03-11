@@ -7,6 +7,8 @@ import session from "express-session";
 import helmate from "helmet";
 import { Server } from "socket.io";
 import http from "http";
+import rateLimit from "express-rate-limit";
+
 
 const app = express();
 app.use(helmate());
@@ -16,6 +18,15 @@ app.use(
     credentials: true,
   })
 );
+
+
+const limiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 100, 
+  message: "Too many requests from this IP, please try again after 15 minutes",
+});
+
+app.use(limiter);
 
 const server = http.createServer(app);
 const io = new Server(server, {
