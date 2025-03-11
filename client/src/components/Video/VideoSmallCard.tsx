@@ -80,7 +80,7 @@ const encryptedPlaylistId = encryptData(playlistId ? playlistId : null);
             className="w-full h-full object-cover rounded-md absolute top-0 left-0 hidden group-hover:block"
             onMouseEnter={(e) => {
               e.currentTarget.play();
-              e.currentTarget.playbackRate = 2;
+              e.currentTarget.playbackRate =2;
             }}
             onMouseLeave={(e) => {
               e.currentTarget.pause();

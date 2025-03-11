@@ -113,6 +113,10 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
       throw new ApiErrors(404, "Video not found");
     }
 
+    if(!video.isPublished) {
+      throw new ApiErrors(400, "Video is not published");
+    }
+
     playlist = await Playlist.create({
       name: video.title || "New Playlist",
       description: video.description || "",
@@ -161,6 +165,8 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
       .json(new ApiResponse(400, null, "Video already added to playlist"));
     }
   }
+
+
 
   const playlistInfo = await Playlist.aggregate([
     {

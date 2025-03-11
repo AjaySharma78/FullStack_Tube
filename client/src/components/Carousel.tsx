@@ -59,6 +59,7 @@ const Carousel:React.FC<CarouselProps>=(
   const handleAddToPlaylist = async (playlistId: string, videoId: string) => {
     try {
       const response = await addVideoToPlaylist(playlistId, videoId);
+      if(!response.success) return toast.error(response.message);
       if (response.message === "Video added to playlist successfully") {
         toast.success("Video added to playlist successfully");
       } else if (

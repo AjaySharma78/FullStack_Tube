@@ -153,7 +153,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
         )}
         
-       {!userProfile && <div
+       {!userProfile && !isWatchHistoryPage && <div
           onClick={handleMute}
           className="absolute right-1 top-2 cursor-pointer w-15 h-15 hidden group-hover:block p-1 z-10 "
         >

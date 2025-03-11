@@ -56,7 +56,7 @@ const YouPage = () => {
           </div>
         </div>
       ) : (
-        <div className="w-full flex items-start justify-start gap-5 p-5">
+        <div className="w-full flex items-start justify-start gap-5 p-5 border-b border-gray-500 dark:border-zinc-500">
           <div className="relative w-20 h-20 md:w-[150px] md:h-[150px]">
             <img
               src={user?.avatar}

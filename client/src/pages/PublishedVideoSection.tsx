@@ -83,7 +83,7 @@ const PublishedVideoSection = () => {
   const handleAddToPlaylist = async (playlistId: string, videoId: string) => {
     try {
       const response = await addVideoToPlaylist(playlistId, videoId);
-
+      if(!response.success)toast.warning(response.message);
       if (response.message === "Video added to playlist successfully") {
         setPlayList(
           (prevPlayList) =>
