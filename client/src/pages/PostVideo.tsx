@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 const MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024; 
 const MAX_VIDEO_SIZE = 95 * 1024 * 1024; 
-const MAX_VIDEO_DURATION = 25 * 60; 
+const MAX_VIDEO_DURATION = 30 * 60; 
 
 const PostVideo = ({ post, showEditCard, handleEditVideo }: any) => {
   const videos = useSelector((state: any) => state.video.videos);
