@@ -850,10 +850,13 @@ function VideoPage() {
             </div>
           </div>
 
-          <div className="md:m-2 md:p-2 rounded-md relative" onClick={toggleComments}>
-            <h1 className="px-1 md:px-2 text-xl font-bold">
-              {comments?.length} Comments
-            </h1>
+          <div className="md:m-2 md:p-2 rounded-md relative">
+            <div className="flex items-center justify-between">
+              <h1 className="px-1 md:px-2 text-xl font-bold">
+                {comments?.length} Comments
+              </h1>
+                        <div className="px-1 md:px-2 text-xl font-bold cursor-pointer" onClick={toggleComments}>{!showAllComments?'All comments':'Comments'}</div>
+            </div>
             {authStatus && (
               <CommentForm
                 user={user}
