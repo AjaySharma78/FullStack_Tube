@@ -38,6 +38,7 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "qrcode": "^1.5.4",
+    "resend": "^4.1.2",
     "sharp": "^0.33.5",
     "socket.io": "^4.8.1",
     "speakeasy": "^2.0.0"
