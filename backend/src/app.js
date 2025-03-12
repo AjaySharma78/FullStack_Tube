@@ -14,7 +14,7 @@ const app = express();
 app.use(helmate());
 app.use(
   cors({
-    origin: config.clientUrl,
+    origin: [config.clientUrl,config.clientUrl2],
     credentials: true,
   })
 );
@@ -31,7 +31,7 @@ app.use(limiter);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: config.clientUrl,
+    origin:  [config.clientUrl,config.clientUrl2],
     credentials: true,
   },
 });

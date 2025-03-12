@@ -5,6 +5,7 @@ const config = {
   databaseUrl: String(process.env.MONGO_DB_URL),
   databaseName: String(process.env.MONGO_DB_NAME),
   clientUrl: String(process.env.CLIENT_CORS_URL),
+  clientUrl2: String(process.env.CLIENT_CORS2_URL),
   cloudinaryCloudName: String(process.env.CLOUDINARY_NAME),
   cloudinaryApiKey: String(process.env.CLOUDINARY_API_KEY),
   cloudinaryApiSecret: String(process.env.CLOUDINARY_API_SECRET),
