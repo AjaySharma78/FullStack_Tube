@@ -11,14 +11,15 @@ import rateLimit from "express-rate-limit";
 
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(helmate());
+
 app.use(
   cors({
     origin: config.clientUrl,
     credentials: true,
   })
 );
-
 
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
