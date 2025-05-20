@@ -220,8 +220,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   };
   return res
     .status(200)
-    .clearCookie("refreshToken", options)
-    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken")
+    .clearCookie("accessToken")
     .json(new ApiResponse(200, {}, "User logged out successfully"));
 });
 
